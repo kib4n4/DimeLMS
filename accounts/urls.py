@@ -1,14 +1,13 @@
 from django.urls import path, include
-
-# from django.contrib.auth.views import (
-#     PasswordResetView,
-#     PasswordResetDoneView,
-#     PasswordResetConfirmView,
-#     PasswordResetCompleteView,
-#     LoginView,
-#     LogoutView,
-# )
+from django.contrib.auth.views import (
+    PasswordResetView,
+    PasswordResetDoneView,
+    PasswordResetConfirmView,
+    PasswordResetCompleteView,
+)
+from .forms import EmailValidationOnForgotPassword, StyledSetPasswordForm
 from .views import (
+    EmailLoginView,
     profile,
     profile_single,
     admin_panel,
@@ -30,10 +29,43 @@ from .views import (
     render_student_pdf_list,  # new
 )
 
-# from .forms import EmailValidationOnForgotPassword
-
 
 urlpatterns = [
+    path(
+        "login/",
+        EmailLoginView.as_view(),
+        name="login",
+    ),
+    path(
+        "password_reset/",
+        PasswordResetView.as_view(
+            form_class=EmailValidationOnForgotPassword,
+            template_name="registration/password_reset.html",
+        ),
+        name="password_reset",
+    ),
+    path(
+        "password_reset/done/",
+        PasswordResetDoneView.as_view(
+            template_name="registration/password_reset_done.html"
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "reset/<uidb64>/<token>/",
+        PasswordResetConfirmView.as_view(
+            form_class=StyledSetPasswordForm,
+            template_name="registration/password_reset_confirm.html",
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "reset/done/",
+        PasswordResetCompleteView.as_view(
+            template_name="registration/password_reset_complete.html"
+        ),
+        name="password_reset_complete",
+    ),
     path("", include("django.contrib.auth.urls")),
     path("admin_panel/", admin_panel, name="admin_panel"),
     path("profile/", profile, name="profile"),
@@ -68,25 +100,4 @@ urlpatterns = [
     # Setting urls
     # path('profile/<int:pk>/edit/', profileUpdateView, name='edit_profile'),
     # path('profile/<int:pk>/change-password/', changePasswordView, name='change_password'),
-    # ################################################################
-    # path('login/', LoginView.as_view(), name='login'),
-    # path('logout/', LogoutView.as_view(), name='logout', kwargs={'next_page': '/'}),
-    # path('password-reset/', PasswordResetView.as_view(
-    #     form_class=EmailValidationOnForgotPassword,
-    #     template_name='registration/password_reset.html'
-    # ),
-    #      name='password_reset'),
-    # path('password-reset/done/', PasswordResetDoneView.as_view(
-    #     template_name='registration/password_reset_done.html'
-    # ),
-    #      name='password_reset_done'),
-    # path('password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(
-    #     template_name='registration/password_reset_confirm.html'
-    # ),
-    #      name='password_reset_confirm'),
-    # path('password-reset-complete/', PasswordResetCompleteView.as_view(
-    #     template_name='registration/password_reset_complete.html'
-    # ),
-    #      name='password_reset_complete')
-    # ################################################################
 ]

@@ -4,9 +4,61 @@ from django.contrib.auth.forms import (
     UserCreationForm,
     UserChangeForm,
 )
-from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from django.contrib.auth import authenticate
+from django.core.exceptions import ValidationError
 from course.models import Program
 from .models import User, Student, Parent, RELATION_SHIP, LEVEL, GENDERS
+
+
+class EmailAuthenticationForm(forms.Form):
+    email = forms.EmailField(
+        label="Email address",
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "email",
+                "placeholder": "you@example.com",
+            }
+        ),
+    )
+    password = forms.CharField(
+        label="Password",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "current-password",
+                "placeholder": "Enter your password",
+            }
+        ),
+    )
+
+    user_cache = None
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get("email")
+        password = cleaned_data.get("password")
+
+        if email and password:
+            user = User.objects.filter(email__iexact=email).first()
+            self.user_cache = user and authenticate(
+                request=self.request,
+                username=user.username,
+                password=password,
+            )
+            if self.user_cache is None:
+                raise ValidationError("Please enter a valid email and password.")
+
+        return cleaned_data
+
+    def get_user(self):
+        return self.user_cache
 
 
 class StaffAddForm(UserCreationForm):
@@ -352,12 +404,48 @@ class ProgramUpdateForm(UserChangeForm):
 
 
 class EmailValidationOnForgotPassword(PasswordResetForm):
+    email = forms.EmailField(
+        label="Email address",
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "email",
+                "placeholder": "you@example.com",
+            }
+        ),
+    )
+
     def clean_email(self):
         email = self.cleaned_data["email"]
         if not User.objects.filter(email__iexact=email, is_active=True).exists():
             msg = "There is no user registered with the specified E-mail address. "
             self.add_error("email", msg)
             return email
+
+
+class StyledSetPasswordForm(SetPasswordForm):
+    new_password1 = forms.CharField(
+        label="New password",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "new-password",
+                "placeholder": "Enter new password",
+            }
+        ),
+    )
+    new_password2 = forms.CharField(
+        label="Confirm new password",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "new-password",
+                "placeholder": "Re-enter new password",
+            }
+        ),
+    )
 
 
 class ParentAddForm(UserCreationForm):
