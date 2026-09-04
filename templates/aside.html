@@ -48,6 +48,8 @@
 
 
 		<ul>
+			<span class="nav-indicator" id="navIndicator" aria-hidden="true"></span>
+			<p class="nav-section-label">{% trans 'Main' %}</p>
 			{% if request.user.is_superuser %}
 			<li class="{% if request.path == dash %}active{% endif %}">
 				<a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>{% trans 'Dashboard' %}</a>
@@ -125,8 +127,7 @@
 				<a href="{% url 'course_registration' %}"><i class="fas fa-plus"></i>{% trans 'Add' %} &amp;{% trans 'Drop Course' %}</a>
 			</li>
 			{% endif %}
-			<br />
-			<p class="ml-3">&RightArrow; Others</p>
+			<p class="nav-section-label">{% trans 'Account' %}</p>
 			<li class="{% if request.path == ep %}active{% endif %}">
 				<a href="{% url 'edit_profile' %}"><i class="fas fa-cogs"></i>{% trans 'Account Setting' %}</a>
 			</li>
@@ -154,13 +155,10 @@
 			</form>
 
 			<p class="small m-0">
-				{% trans 'Read our' %} <a href="#"> {% trans 'Privacy' %} </a> {% trans 'and' %} <a href="#"> {% trans 'Terms of use.' %}' </a>
+				{% trans 'Read our' %} <a href="#"> {% trans 'Privacy' %} </a> {% trans 'and' %} <a href="#"> {% trans 'Terms of use' %} </a>
 				<br />DIME LMS &copy; <script>document.write(new Date().getFullYear());</script>
 				<br />
 			</p>
-			<a href="https://github.com/adilmohak/django-lms" class="btn btn-sm btn-dark mx-auto" target="_blank">
-				{% trans '⭐️ Star This Project' %}
-			</a>
 		</div>
 	</footer>
 </div>
@@ -168,8 +166,35 @@
 {% block js %}
 <script>
 	document.getElementById("lang-select").addEventListener("change", function() {
-		console.log("Changed!")
-    	document.getElementById("lang-form").submit();  // Submit the form programmatically
+		document.getElementById("lang-form").submit();  // Submit the form programmatically
 	});
+
+	(function () {
+		// The active item carries its own CSS background (no-JS baseline).
+		// This indicator is a purely additive hover-tracking highlight that
+		// glides between items, Linear/Vercel-sidebar style.
+		var nav = document.querySelector("#side-nav ul");
+		var indicator = document.getElementById("navIndicator");
+		if (!nav || !indicator) return;
+
+		var items = Array.prototype.slice.call(nav.querySelectorAll("li"));
+
+		function moveTo(li) {
+			var navRect = nav.getBoundingClientRect();
+			var elRect = li.getBoundingClientRect();
+			indicator.style.transform = "translateY(" + (elRect.top - navRect.top) + "px)";
+			indicator.style.height = elRect.height + "px";
+			indicator.classList.add("is-visible");
+		}
+
+		items.forEach(function (li) {
+			li.addEventListener("mouseenter", function () {
+				moveTo(li);
+			});
+		});
+		nav.addEventListener("mouseleave", function () {
+			indicator.classList.remove("is-visible");
+		});
+	})();
 </script>
 {% endblock js %}

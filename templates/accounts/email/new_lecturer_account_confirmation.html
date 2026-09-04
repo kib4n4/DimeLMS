@@ -5,20 +5,20 @@
     <style>
       :root {
         --padding-base: 0.5rem;
-        --primary: #4caf50;
-        --primary-dark: #45a049;
+        --primary: #00b6e1;
+        --primary-dark: #0089a9;
         --warning: #ffcb00;
         --warning-dark: #edbe02;
         --light: #ffffff;
-        --gmail-primary: #ebf0fb;
-        --gmail-secondary: #f6f9fd;
-        --body-color: var(--gmail-primary);
+        --header-bg: #eaf7fb;
+        --header-border: #d8eef4;
+        --body-color: #f3f2f2;
         --grey-100: #e9e9e9;
         --grey-200: #cfcfcf;
         --grey-300: #9d9d9d;
         --grey-400: #888888;
         --grey-500: #555555;
-        --dark: #333333;
+        --dark: #1c1c1e;
       }
 
       /* Reset default styling */
@@ -41,22 +41,23 @@
       h4,
       h5,
       h6 {
-        color: #012481;
+        color: #1c1c1e;
       }
 
       h1 {
-        font-size: 28px;
+        font-size: 26px;
+        font-weight: 700;
       }
 
       a {
-        color: #005aeb;
+        color: #0089a9;
         text-decoration: none;
       }
 
       p {
         font-size: 16px;
         margin-bottom: 15px;
-        color: #46528f;
+        color: #4b5563;
       }
 
       th,
@@ -65,15 +66,15 @@
       }
 
       .header {
-        background-color: #ebf0fb;
-        border-bottom: 1px solid #cfcfcf;
+        background-color: #eaf7fb;
+        border-bottom: 1px solid #d8eef4;
         padding: 0.5rem 2rem;
       }
 
       .footer {
         padding: 2rem;
         text-align: center;
-        background-color: #333333;
+        background-color: #1c1c1e;
       }
 
       .footer p {
@@ -94,8 +95,8 @@
 
       .card {
         background-color: #fff;
-        border: 1px solid #cfcfcf;
-        border-radius: 5px;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
         overflow: hidden;
       }
 
@@ -191,33 +192,33 @@
       }
 
       .text-muted {
-        color: rgba(70, 82, 143, 0.5) !important;
+        color: rgba(75, 85, 99, 0.6) !important;
       }
 
       .divider {
         width: 100%;
         height: 1px;
-        border-bottom: 1px solid #cfcfcf;
+        border-bottom: 1px solid #e5e5e5;
       }
 
       .btn {
         display: inline-block;
         background-color: #e9e9e9;
-        color: #333333;
+        color: #1c1c1e;
         text-decoration: none;
-        padding: 10px 20px;
-        border-radius: 3px;
-        font-weight: bold;
+        padding: 12px 22px;
+        border-radius: 8px;
+        font-weight: 600;
         transition: background-color 0.3s ease;
       }
 
       .btn-primary {
-        background-color: #4caf50;
+        background-color: #00b6e1;
         color: #fff !important;
       }
 
       .btn-primary:hover {
-        background-color: #45a049;
+        background-color: #0089a9;
       }
 
       .btn-warning {
@@ -242,11 +243,11 @@
 
   <body
     style="
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      color: #46528f;
-      background-color: #ebf0fb;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #4b5563;
+      background-color: #f3f2f2;
       padding: 20px;
-      line-height: 1.4;
+      line-height: 1.5;
     "
   >
     <div class="container">
@@ -258,15 +259,15 @@
           </p>
         </div>
         <div class="card-body">
-          <h1 class="mb-5">🚀 Confirm your account</h1>
+          <h1 class="mb-5">Confirm your account</h1>
           <h4>Dear <b>{{ user.get_full_name }}</b>,</h4>
           <p>
             A new lecturer account with ID of <b>{{ user.username }}</b> has been
             created for you. <br />
-            You're receiving this e-mail because the Dj-LMS admin has given your
-            e-mail address to register an account on djlms.com. <br />
+            You're receiving this e-mail because the DIME LMS admin has given your
+            e-mail address to register an account on dimelms.com. <br />
           </p>
-          <h5>Login credentials for your DJ LMS account:</h5>
+          <h5>Login credentials for your DIME LMS account:</h5>
           <ul>
             <li>ID: {{ user.username }}</li>
             <li>Your password: {{ password }}</li>
@@ -274,27 +275,25 @@
           <p>To secure your account be sure to change your password.</p>
           <p>
             <a
-              href="http://localhost:3000/auth/confirm-email?key={{ key }}"
+              href="https://dimelms.com/accounts/login/"
               class="btn btn-primary"
-              >Confirm Email and Login</a
+              >Sign in to your account</a
             >
           </p>
           <p class="text-muted small">
-            <mark
-              >⚠ If you think this email shouldn't be coming to you, you can
-              simply ignore it.</mark
-            >
+            If you think this email shouldn't be coming to you, you can
+            simply ignore it.
           </p>
         </div>
         <div class="footer">
-          <p>Sincerely, djlms team!</p>
+          <p>Sincerely, DIME LMS team!</p>
           <p>
             For any inquiries or assistance, please contact our support team:
           </p>
-          <p>Email: <a href="mailto:support@djlms.com">support@djlms.com</a></p>
+          <p>Email: <a href="mailto:support@dimelms.com">support@dimelms.com</a></p>
           <p>Phone: <a href="tel:251900000000">+(251) 90-000-0000</a></p>
           <p>
-            &copy; 2023 <a href="djlms.com">djlms.com</a> | All rights reserved.
+            &copy; 2023 <a href="https://dimelms.com">dimelms.com</a> | All rights reserved.
           </p>
         </div>
       </div>

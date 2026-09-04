@@ -8,6 +8,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
+    <script>
+        // Applied before first paint to avoid a flash of the wrong theme.
+        (function () {
+            try {
+                var stored = localStorage.getItem("dime-theme");
+                if (stored === "dark" || stored === "light") {
+                    document.documentElement.setAttribute("data-theme", stored);
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <title>{% block title %}DIME LMS{% endblock title %}</title>
 
     <link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
@@ -20,9 +32,6 @@
     <link rel="stylesheet" type="text/css" href="{% static 'vendor/bootstrap-5.3.2/css/bootstrap.min.css' %}">
 
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.min.css' %}">
-
-    <!-- Brand color override (kept separate from the compiled theme bundle above) -->
-    <link rel="stylesheet" type="text/css" href="{% static 'css/theme-override.css' %}">
 
     <!-- <script src="https://js.stripe.com/v3/"></script> -->
     {% block header %}{% endblock %}
@@ -39,7 +48,7 @@
             {% include 'navbar.html' %}
         {% endblock %}
 
-        <div class="container-fluid" id="main-content">
+        <div class="container-fluid page-enter" id="main-content">
             {% block content %}{% endblock content %}
         </div>
 

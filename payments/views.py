@@ -43,8 +43,7 @@ class PaymentGetwaysView(TemplateView):
         context["key"] = settings.STRIPE_PUBLISHABLE_KEY
         context["amount"] = 500
         context["description"] = "Stripe Payment"
-        context["invoice_session"] = self.request.session["invoice_session"]
-        print(context["invoice_session"])
+        context["invoice_session"] = self.request.session.get("invoice_session")
         return context
 
 

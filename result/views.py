@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
@@ -210,7 +210,10 @@ def add_score_for(request, id):
 @login_required
 @student_required
 def grade_result(request):
-    student = Student.objects.get(student__pk=request.user.id)
+    student = Student.objects.filter(student__pk=request.user.id).first()
+    if not student:
+        messages.error(request, "This page is only available to student accounts.")
+        return redirect("dashboard")
     courses = TakenCourse.objects.filter(student__student__pk=request.user.id).filter(
         course__level=student.level
     )
@@ -266,7 +269,10 @@ def grade_result(request):
 @login_required
 @student_required
 def assessment_result(request):
-    student = Student.objects.get(student__pk=request.user.id)
+    student = Student.objects.filter(student__pk=request.user.id).first()
+    if not student:
+        messages.error(request, "This page is only available to student accounts.")
+        return redirect("dashboard")
     courses = TakenCourse.objects.filter(
         student__student__pk=request.user.id, course__level=student.level
     )
@@ -329,7 +335,7 @@ def result_sheet_pdf_view(request, id):
 
     print("\nsettings.MEDIA_ROOT", settings.MEDIA_ROOT)
     print("\nsettings.STATICFILES_DIRS[0]", settings.STATICFILES_DIRS[0])
-    logo = settings.STATICFILES_DIRS[0] + "/img/dj-lms.png"
+    logo = settings.STATICFILES_DIRS[0] + "/img/dime-lms.png"
     im = Image(logo, 1 * inch, 1 * inch)
     im.__setattr__("_offs_x", -200)
     im.__setattr__("_offs_y", -45)
@@ -456,8 +462,11 @@ def result_sheet_pdf_view(request, id):
 @login_required
 @student_required
 def course_registration_form(request):
-    current_semester = Semester.objects.get(is_current_semester=True)
-    current_session = Session.objects.get(is_current_session=True)
+    current_semester = Semester.objects.filter(is_current_semester=True).first()
+    current_session = Session.objects.filter(is_current_session=True).first()
+    if not current_semester or not current_session:
+        messages.error(request, "No active session/semester found.")
+        return redirect("dashboard")
     courses = TakenCourse.objects.filter(student__student__id=request.user.id)
     fname = request.user.username + ".pdf"
     fname = fname.replace("/", "-")
@@ -741,7 +750,7 @@ def course_registration_form(request):
 
     # FIRST SEMESTER ENDS HERE
 
-    logo = settings.STATICFILES_DIRS[0] + "/img/dj-lms.png"
+    logo = settings.STATICFILES_DIRS[0] + "/img/dime-lms.png"
     im_logo = Image(logo, 1 * inch, 1 * inch)
     im_logo.__setattr__("_offs_x", -218)
     im_logo.__setattr__("_offs_y", 480)

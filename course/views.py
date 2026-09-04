@@ -531,6 +531,7 @@ def course_drop(request):
             obj.delete()
         messages.success(request, "Successfully Dropped!")
         return redirect("course_registration")
+    return redirect("course_registration")
 
 
 # ########################################################

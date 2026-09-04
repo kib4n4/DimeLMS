@@ -34,20 +34,15 @@ from django.template.loader import (
 
 
 class EmailLoginView(LoginView):
-    """Login view keyed on email, with an optional "remember me" checkbox.
+    """Login by email (see EmailAuthenticationForm), expiring the session on
+    browser close unless "Remember me" is checked."""
 
-    When "remember me" is left unchecked the session expires as soon as the
-    browser is closed; when checked it falls back to Django's configured
-    SESSION_COOKIE_AGE (default 2 weeks).
-    """
-
-    authentication_form = EmailAuthenticationForm
+    form_class = EmailAuthenticationForm
+    template_name = "registration/login.html"
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        if self.request.POST.get("remember_me"):
-            self.request.session.set_expiry(None)
-        else:
+        if not self.request.POST.get("remember_me"):
             self.request.session.set_expiry(0)
         return response
 
