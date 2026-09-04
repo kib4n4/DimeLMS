@@ -72,7 +72,7 @@
 	<div class="row">
 		<div class="col-12 d-flex justify-content-center">
 
-			  <form method="POST" action="{% url 'gopay_payment' %}">
+			  <form method="POST" action="{% url 'gopay_charge' %}">
 				{% csrf_token %}
 				<button name="pay" type="submit" class="btn btn-primary">Zaplatit</button>
 			  </form>
@@ -84,7 +84,7 @@
 			</div>
 			<div class="card-payment stripe">
 				<h4>Stripe</h4>
-				<form action="{% url 'charge' %}" method="POST">
+				<form action="{% url 'stripe_charge' %}" method="POST">
 				  {% csrf_token %}
 				  <script src="https://checkout.stripe.com/checkout.js" class="stripe-button"
 			          data-key="{{ key }}"

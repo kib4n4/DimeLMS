@@ -19,7 +19,7 @@
     .br-orange{border: 1px solid #fd7e14; border-radius: 7px;}
     .class-item {
         display: block;
-        border-left: 4px solid #6cbd45; 
+        border-left: 4px solid var(--brand-500);
         padding: 1rem !important;
         background: #f8f9fa;
         border-radius: 3px;
@@ -30,12 +30,12 @@
     .class-item a{padding: 2px; color: #343a40; text-decoration: none; transition: .5s;}
     .class-item:hover{
         transform: translateX(15px);
-        background: #6cbd45;
+        background: var(--brand-500);
     }
     .class-item:hover h4 a {
       color: #fff; }
     .class-item:hover p, .class-item:hover span {
-      color: rgb(158, 239, 119); 
+      color: var(--brand-100);
     }
 </style>
 
@@ -123,7 +123,7 @@
     <ul class="pl-3">
         <li>{% trans 'Program' %} <span class="text-orange">&gt;</span> {% trans 'Title or Description' %}</li>
         <li>{% trans 'Course' %} <span class="text-orange">&gt;</span>{% trans 'Title, Code or Description' %}</li>
-        <li>{% trans 'News And Events' %} <span class="text-orange">&gt;</span> {% trans 'Title, Description or just by typing "news" or "event %}li>
+        <li>{% trans 'News And Events' %} <span class="text-orange">&gt;</span> {% trans 'Title, Description or just by typing "news" or "event"' %}</li>
         <li>{% trans 'Quiz' %} <span class="text-orange">&gt;</span>{% trans 'Title, Description or Category(practice, assignment and exam)' %}</li>
     </ul>
     </div>

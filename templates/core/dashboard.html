@@ -34,77 +34,38 @@
 	</div>
 </div>
 
-<div class="row users-count px-3">
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-aqua"></i></h3>
-			<div class="text-right">
-				{% trans 'Students' %}
-				<h2>{{ student_count }}</h2>
-			</div>
+<div class="stat-strip">
+	<div class="stat-strip-item">
+		<i class="fas fa-user-graduate"></i>
+		<div>
+			<span class="stat-strip-label">{% trans 'Students' %}</span>
+			{% if student_count %}
+			<span class="stat-strip-value" data-count-to="{{ student_count }}">0</span>
+			{% else %}
+			<span class="stat-strip-value stat-strip-value--empty">&mdash;</span>
+			{% endif %}
 		</div>
 	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-orange"></i></h3>
-			<div class="text-right">
-				{% trans 'Lecturers' %}
-				<h2>{{ lecturer_count }}</h2>
-			</div>
+	<div class="stat-strip-item">
+		<i class="fas fa-chalkboard-teacher"></i>
+		<div>
+			<span class="stat-strip-label">{% trans 'Lecturers' %}</span>
+			{% if lecturer_count %}
+			<span class="stat-strip-value" data-count-to="{{ lecturer_count }}">0</span>
+			{% else %}
+			<span class="stat-strip-value stat-strip-value--empty">&mdash;</span>
+			{% endif %}
 		</div>
 	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-red"></i></h3>
-			<div class="text-right">
-				{% trans 'Administrators' %}
-				<h2>{{ superuser_count }}</h2>
-			</div>
-		</div>
-	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-purple"></i></h3>
-			<div class="text-right">
-				{% trans 'Lab Assistance' %}
-				<h2>500</h2>
-			</div>
-		</div>
-	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-red"></i></h3>
-			<div class="text-right">
-				{% trans 'Librarians' %}
-				<h2>300</h2>
-			</div>
-		</div>
-	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-purple"></i></h3>
-			<div class="text-right">
-				{% trans 'Supervisors' %}
-				<h2>660</h2>
-			</div>
-		</div>
-	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-orange"></i></h3>
-			<div class="text-right pl-2">
-				{% trans 'Office Assistance' %}
-				<h2>1,700</h2>
-			</div>
-		</div>
-	</div>
-	<div class="col-6 col-md-3 mb-3 px-2">
-		<div class="card-count p-3">
-			<h3><i class="fas fa-users bg-light-aqua"></i></h3>
-			<div class="text-right">
-				{% trans 'Others' %}
-				<h2>1,250</h2>
-			</div>
+	<div class="stat-strip-item">
+		<i class="fas fa-user-tie"></i>
+		<div>
+			<span class="stat-strip-label">{% trans 'Administrators' %}</span>
+			{% if superuser_count %}
+			<span class="stat-strip-value" data-count-to="{{ superuser_count }}">0</span>
+			{% else %}
+			<span class="stat-strip-value stat-strip-value--empty">&mdash;</span>
+			{% endif %}
 		</div>
 	</div>
 </div>
@@ -165,8 +126,7 @@
 {% block js %}
 
 <script src="{% url 'javascript-catalog' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'js/dashboard.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
 <script>
 	$('.fa-expand-alt').click(function () {
 		if ($(this).parent('.chart-wrap').parent('.col-md-6').hasClass('expand')) {
@@ -179,270 +139,271 @@
 	})
 </script>
 <script>
-	const malesCount = {{ males_count }}
-const femalesCount = {{ females_count }}
+const malesCount = {{ males_count }};
+const femalesCount = {{ females_count }};
 
-$(document).ready(function () {
+(function () {
+	// One cohesive color story, shared by every chart — shades of the brand
+	// blue plus a single neutral, not a rainbow of unrelated hues.
+	const PALETTE = ['#00b6e1', '#66e2ff', '#005d73', '#95a1b2', '#007c99'];
+	const charts = [];
 
-    // Setup
-    const labels = [
-        gettext('January'),
-        gettext('February'),
-        gettext('March'),
-        gettext('April'),
-        gettext('May'),
-        gettext('June'),
-    ];
-    const data = {
-        labels: labels,
-        datasets: [{
-            label: gettext('Students'),
-            backgroundColor: 'rgba(0, 182, 225, 0.5)',
-            borderColor: 'rgb(0, 182, 225)',
-            hoverBorderWidth: 3,
-            data: [0, 10, 5, 2, 20, 30, 45]
-        }, {
-            label: gettext('Teachers'),
-            backgroundColor: 'rgba(235, 104, 52, 0.5)',
-            borderColor: 'rgb(235, 104, 52)',
-            hoverBorderWidth: 3,
-            data: [20, 0, 15, 4, 6, 4, 60],
-        }, {
-            label: gettext('Admins'),
-            backgroundColor: 'rgba(27, 175, 122, 0.5)',
-            borderColor: 'rgb(27, 175, 122)',
-            hoverBorderWidth: 3,
-            data: [85, 30, 34, 20, 20, 55, 45],
-        }, {
-            label: gettext('Stuffs'),
-            backgroundColor: 'rgba(237, 161, 0, 0.5)',
-            borderColor: 'rgb(237, 161, 0)',
-            hoverBorderWidth: 3,
-            data: [45, 75, 70, 80, 20, 30, 90],
-        }]
-    };
+	function cssVar(name) {
+		return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+	}
 
-    var traffic = document.getElementById('traffic');
-    var chart = new Chart(traffic, {
-        type: 'line',
-        data: data,
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: gettext('Website Traffic'),
-                    padding: 15
-                }
-            }
-        }
-    });
+	function withAlpha(hex, alpha) {
+		const n = parseInt(hex.replace('#', ''), 16);
+		const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+		return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+	}
 
-    // Setup
-    const labelsEnrollment = [
-        '2016',
-        '2017',
-        '2018',
-        '2019',
-        '2020',
-        '2021',
-    ];
-    const dataEnrollment = {
-        labels: labelsEnrollment,
-        datasets: [{
-            label: gettext('Comp.S'),
-            backgroundColor: 'rgba(0, 182, 225, 0.5)',
-            borderColor: 'rgb(0, 182, 225)',
-            hoverBorderWidth: 3,
-            data: [0, 10, 5, 2, 20, 30, 45]
-        }, {
-            label: gettext('Architecture'),
-            backgroundColor: 'rgba(235, 104, 52, 0.5)',
-            borderColor: 'rgb(235, 104, 52)',
-            hoverBorderWidth: 3,
-            data: [20, 0, 15, 4, 6, 4, 60],
-        }, {
-            label: gettext('Civil Eng'),
-            backgroundColor: 'rgba(27, 175, 122, 0.5)',
-            borderColor: 'rgb(27, 175, 122)',
-            hoverBorderWidth: 3,
-            data: [85, 30, 34, 20, 20, 55, 45],
-        }, {
-            label: gettext('Accounting'),
-            backgroundColor: 'rgba(237, 161, 0, 0.5)',
-            borderColor: 'rgb(237, 161, 0)',
-            hoverBorderWidth: 3,
-            data: [45, 75, 70, 80, 20, 30, 90],
-        }, {
-            label: gettext('Business M.'),
-            backgroundColor: 'rgba(232, 123, 164, 0.5)',
-            borderColor: 'rgb(232, 123, 164)',
-            hoverBorderWidth: 3,
-            data: [15, 75, 45, 90, 60, 30, 90],
-        }]
-    };
+	function themeOptions() {
+		return {
+			text: cssVar('--text-secondary') || '#4d617d',
+			muted: cssVar('--text-muted') || '#95a1b2',
+			grid: cssVar('--border-subtle') || '#e1e5ea',
+			surface: cssVar('--surface') || '#ffffff',
+			border: cssVar('--border-default') || '#cad0d8',
+			font: "Rubik, -apple-system, sans-serif",
+		};
+	}
 
-    var enrollement = document.getElementById('enrollement');
-    var chart = new Chart(enrollement, {
-        type: 'bar',
-        data: dataEnrollment,
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: gettext('Enrollment per course'),
-                    padding: 20
-                }
-            }
-        }
-    });
+	function baseOptions(extra) {
+		const t = themeOptions();
+		Chart.defaults.color = t.text;
+		Chart.defaults.font.family = t.font;
 
-    // Average grade setup
-    const labelsGrade = [
-        '2017',
-        '2018',
-        '2019',
-        '2020',
-        '2022',
-    ];
-    const dataGrade = {
-        labels: labelsGrade,
-        datasets: [{
-            label: gettext("Comp sci."),
-            backgroundColor: 'rgba(0, 182, 225, 0.5)',
-            borderColor: 'rgb(0, 182, 225)',
-            hoverBorderWidth: 3,
-            data: [0, 10, 5, 2, 20, 30, 45]
-        }, {
-            label: gettext("Civil eng."),
-            backgroundColor: 'rgba(235, 104, 52, 0.5)',
-            borderColor: 'rgb(235, 104, 52)',
-            hoverBorderWidth: 3,
-            data: [20, 0, 15, 4, 6, 4, 60],
-        }, {
-            label: gettext("Architect."),
-            backgroundColor: 'rgba(27, 175, 122, 0.5)',
-            borderColor: 'rgb(27, 175, 122)',
-            hoverBorderWidth: 3,
-            data: [85, 30, 34, 20, 20, 55, 45],
-        }, {
-            label: gettext("Economics"),
-            backgroundColor: 'rgba(237, 161, 0, 0.5)',
-            borderColor: 'rgb(237, 161, 0)',
-            hoverBorderWidth: 3,
-            data: [45, 75, 70, 80, 20, 30, 90],
-        }]
-    };
-    
-    var students_grade = document.getElementById('students_grade');
-    var chart = new Chart(students_grade, {
-        type: 'bar',
-        data: dataGrade,
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: gettext('Students average grade (performance)'),
-                    padding: 20
-                }
-            }
-        }
-    });
+		return Object.assign({
+			responsive: true,
+			animation: {
+				duration: 900,
+				easing: 'easeOutQuart',
+				delay: function (ctx) {
+					return ctx.type === 'data'
+						? ctx.dataIndex * 30 + ctx.datasetIndex * 120
+						: 0;
+				},
+			},
+			interaction: { mode: 'index', intersect: false },
+			plugins: {
+				legend: {
+					labels: {
+						color: t.text,
+						usePointStyle: true,
+						pointStyle: 'circle',
+						boxWidth: 8,
+						padding: 16,
+						font: { size: 12 },
+					},
+				},
+				tooltip: {
+					enabled: true,
+					backgroundColor: t.surface,
+					titleColor: t.text,
+					bodyColor: t.text,
+					borderColor: t.border,
+					borderWidth: 1,
+					cornerRadius: 10,
+					padding: 12,
+					displayColors: true,
+					usePointStyle: true,
+					boxPadding: 4,
+					titleFont: { family: t.font, weight: '600' },
+					bodyFont: { family: t.font },
+				},
+			},
+		}, extra || {});
+	}
 
-    const dataGender = {
-        labels: [
-            gettext('Man'),
-            gettext('Women')
-        ],
-        datasets: [{
-            label: gettext("Students Gender Dataset"),
-            data: [malesCount, femalesCount],
-            backgroundColor: [
-            'rgb(0, 182, 225)',
-            'rgb(235, 104, 52)'
-            ],
-            hoverOffset: 4
-        }]
-    };
+	function scalesFor(type) {
+		const t = themeOptions();
+		if (type === 'pie') return {};
+		return {
+			x: {
+				grid: { color: 'transparent' },
+				ticks: { color: t.muted, font: { size: 11 } },
+			},
+			y: {
+				grid: { color: t.grid },
+				border: { display: false },
+				ticks: { color: t.muted, font: { size: 11 } },
+			},
+		};
+	}
 
-    var gender = document.getElementById('gender');
-    var chart = new Chart(gender, {
-        type: 'pie',
-        data: dataGender,
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: gettext('Students Gender'),
-                    padding: 20
-                }
-            }
-        }
-    });
+	function makeDatasets(defs) {
+		return defs.map((d, i) => {
+			const color = PALETTE[i % PALETTE.length];
+			return Object.assign({
+				backgroundColor: withAlpha(color, d.fill === false ? 1 : 0.55),
+				borderColor: color,
+				borderWidth: 2,
+				hoverBorderWidth: 3,
+				borderRadius: d.type === 'bar' || !d.type ? 6 : 0,
+				tension: 0.35,
+				pointRadius: 3,
+				pointBackgroundColor: color,
+				pointBorderColor: color,
+			}, d);
+		});
+	}
 
-    const dataQualification = {
-        labels: [
-            gettext('PHD'),
-            gettext('Masters'),
-            gettext('BSc degree')
-        ],
-        datasets: [{
-            label: gettext("Lecturer Qualifications Dataset"),
-            data: [24, 30, 26],
-            backgroundColor: [
-            'rgb(0, 182, 225)',
-            'rgb(235, 104, 52)',
-            'rgb(27, 175, 122)'
-            ],
-            hoverOffset: 4
-        }]
-    };
-    var ethnicity = document.getElementById('ethnicity');
-    var chart = new Chart(ethnicity, {
-        type: 'pie',
-        data: dataQualification,
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: gettext('Lecturer qualifications'),
-                    padding: 20
-                }
-            }
-        }
-    });
+	function track(chart) {
+		charts.push(chart);
+		return chart;
+	}
 
-    const dataLevels = {
-        labels: [
-            gettext('PHD'),
-            gettext('Masters'),
-            gettext('BSc degree')
-        ],
-        datasets: [{
-            label: gettext("Students level"),
-            data: [14, 30, 56],
-            backgroundColor: [
-            'rgb(0, 182, 225)',
-            'rgb(235, 104, 52)',
-            'rgb(27, 175, 122)'
-            ],
-            hoverOffset: 4
-        }]
-    };
-    var language = document.getElementById('language');
-    var chart = new Chart(language, {
-        type: 'pie',
-        data: dataLevels,
-        options: {
-            plugins: {
-                title: {
-                    display: true,
-                    text: gettext('Student levels'),
-                    padding: 20
-                }
-            }
-        }
-    });
-})
+	// Setup
+	const labels = [
+		gettext('January'),
+		gettext('February'),
+		gettext('March'),
+		gettext('April'),
+		gettext('May'),
+		gettext('June'),
+	];
+	const data = {
+		labels: labels,
+		datasets: makeDatasets([
+			{ label: gettext('Students'), data: [0, 10, 5, 2, 20, 30, 45] },
+			{ label: gettext('Teachers'), data: [20, 0, 15, 4, 6, 4, 60] },
+			{ label: gettext('Admins'), data: [85, 30, 34, 20, 20, 55, 45] },
+			{ label: gettext('Stuffs'), data: [45, 75, 70, 80, 20, 30, 90] },
+		]),
+	};
+
+	var traffic = document.getElementById('traffic');
+	track(new Chart(traffic, {
+		type: 'line',
+		data: data,
+		options: baseOptions({
+			scales: scalesFor('line'),
+			plugins: {
+				title: { display: true, text: gettext('Website Traffic'), padding: 15 },
+			},
+		}),
+	}));
+
+	// Setup
+	const labelsEnrollment = ['2016', '2017', '2018', '2019', '2020', '2021'];
+	const dataEnrollment = {
+		labels: labelsEnrollment,
+		datasets: makeDatasets([
+			{ label: gettext('Comp.S'), data: [0, 10, 5, 2, 20, 30, 45] },
+			{ label: gettext('Architecture'), data: [20, 0, 15, 4, 6, 4, 60] },
+			{ label: gettext('Civil Eng'), data: [85, 30, 34, 20, 20, 55, 45] },
+			{ label: gettext('Accounting'), data: [45, 75, 70, 80, 20, 30, 90] },
+			{ label: gettext('Business M.'), data: [15, 75, 45, 90, 60, 30, 90] },
+		]),
+	};
+
+	var enrollement = document.getElementById('enrollement');
+	track(new Chart(enrollement, {
+		type: 'bar',
+		data: dataEnrollment,
+		options: baseOptions({
+			scales: scalesFor('bar'),
+			plugins: {
+				title: { display: true, text: gettext('Enrollment per course'), padding: 20 },
+			},
+		}),
+	}));
+
+	// Average grade setup
+	const labelsGrade = ['2017', '2018', '2019', '2020', '2022'];
+	const dataGrade = {
+		labels: labelsGrade,
+		datasets: makeDatasets([
+			{ label: gettext('Comp sci.'), data: [0, 10, 5, 2, 20, 30, 45] },
+			{ label: gettext('Civil eng.'), data: [20, 0, 15, 4, 6, 4, 60] },
+			{ label: gettext('Architect.'), data: [85, 30, 34, 20, 20, 55, 45] },
+			{ label: gettext('Economics'), data: [45, 75, 70, 80, 20, 30, 90] },
+		]),
+	};
+
+	var students_grade = document.getElementById('students_grade');
+	track(new Chart(students_grade, {
+		type: 'bar',
+		data: dataGrade,
+		options: baseOptions({
+			scales: scalesFor('bar'),
+			plugins: {
+				title: { display: true, text: gettext('Students average grade (performance)'), padding: 20 },
+			},
+		}),
+	}));
+
+	function pieDataset(values) {
+		return [{
+			data: values,
+			backgroundColor: PALETTE.slice(0, values.length),
+			borderColor: themeOptions().surface,
+			borderWidth: 2,
+			hoverOffset: 8,
+		}];
+	}
+
+	const dataGender = {
+		labels: [gettext('Man'), gettext('Women')],
+		datasets: pieDataset([malesCount, femalesCount]),
+	};
+	var gender = document.getElementById('gender');
+	track(new Chart(gender, {
+		type: 'pie',
+		data: dataGender,
+		options: baseOptions({
+			plugins: { title: { display: true, text: gettext('Students Gender'), padding: 20 } },
+		}),
+	}));
+
+	const dataQualification = {
+		labels: [gettext('PHD'), gettext('Masters'), gettext('BSc degree')],
+		datasets: pieDataset([24, 30, 26]),
+	};
+	var ethnicity = document.getElementById('ethnicity');
+	track(new Chart(ethnicity, {
+		type: 'pie',
+		data: dataQualification,
+		options: baseOptions({
+			plugins: { title: { display: true, text: gettext('Lecturer qualifications'), padding: 20 } },
+		}),
+	}));
+
+	const dataLevels = {
+		labels: [gettext('PHD'), gettext('Masters'), gettext('BSc degree')],
+		datasets: pieDataset([14, 30, 56]),
+	};
+	var language = document.getElementById('language');
+	track(new Chart(language, {
+		type: 'pie',
+		data: dataLevels,
+		options: baseOptions({
+			plugins: { title: { display: true, text: gettext('Student levels'), padding: 20 } },
+		}),
+	}));
+
+	// Re-theme in place when the user toggles dark mode, instead of requiring a reload.
+	window.addEventListener('dime-theme-change', function () {
+		const t = themeOptions();
+		charts.forEach(function (chart) {
+			chart.options.plugins.legend.labels.color = t.text;
+			chart.options.plugins.tooltip.backgroundColor = t.surface;
+			chart.options.plugins.tooltip.titleColor = t.text;
+			chart.options.plugins.tooltip.bodyColor = t.text;
+			chart.options.plugins.tooltip.borderColor = t.border;
+			if (chart.options.scales && chart.options.scales.x) {
+				chart.options.scales.x.ticks.color = t.muted;
+				chart.options.scales.y.ticks.color = t.muted;
+				chart.options.scales.y.grid.color = t.grid;
+			}
+			if (chart.config.type === 'pie') {
+				chart.data.datasets.forEach(function (ds) { ds.borderColor = t.surface; });
+			}
+			chart.update('none');
+		});
+	});
+})();
 
 </script>
 

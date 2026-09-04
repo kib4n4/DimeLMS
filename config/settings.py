@@ -32,6 +32,13 @@ ALLOWED_HOSTS = ["127.0.0.1", "adilmohak1.pythonanywhere.com"]
 # change the default user models to our custom model
 AUTH_USER_MODEL = "accounts.User"
 
+# Allow signing in with an email address (accounts.backends.EmailBackend),
+# falling back to username for the Django admin and other username-based flows.
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 # Application definition
 
 DJANGO_APPS = [

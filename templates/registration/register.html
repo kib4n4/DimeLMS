@@ -1,160 +1,117 @@
 {% extends 'registration/registration_base.html' %}
 {% load i18n %}
-{% block title %}{% trans 'Register | DIME LMS' %}{% endblock title %}
+{% block title %}{% trans 'Create account' %} | DIME LMS{% endblock title %}
 {% load crispy_forms_tags %}
-{% load static %}
-{% block header %}<link rel="stylesheet" href="{% static 'css/login.css' %}">{% endblock %}
+
+{% block panel_class %} auth-panel--wide{% endblock %}
+
 {% block content %}
 
-<main class="auth-page">
-  <div class="auth-shell auth-shell-wide">
+<h1 class="auth-title">{% trans 'Create your account' %}</h1>
+<p class="auth-subtitle">{% trans 'Register as a student to get access to your courses and results.' %}</p>
 
-    <section class="auth-panel">
-      <div class="auth-panel-inner auth-panel-inner-wide">
-        <div class="auth-brand">
-          <img src="{% static 'img/dime-logo.png' %}" alt="{% trans 'DIME' %}">
-        </div>
-
-        <div class="auth-heading">
-          <h1>{% trans 'Create your account' %}</h1>
-          <p>{% trans 'Register as a student to get access to your courses and results.' %}</p>
-        </div>
-
-        {% if messages %}
-          {% for message in messages %}
-            <p class="auth-banner {% if message.tags %}auth-banner-{{ message.tags }}{% endif %}">
-              <i class="fas {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}" aria-hidden="true"></i>{{ message }}
-            </p>
-          {% endfor %}
-        {% endif %}
-
-        <form action="" method="POST" id="register-form" novalidate>{% csrf_token %}
-
-          <div class="auth-field">
-            <label for="username_id">{% trans 'Username' %}</label>
-            {{ form.username }}
-            {% if form.username.errors %}<p class="auth-error">{{ form.username.errors.0 }}</p>{% endif %}
-            <div id="message-wrapper"></div>
-          </div>
-
-          <div class="auth-field-row">
-            <div class="auth-field">
-              <label for="id_first_name">{% trans 'First name' %} <span class="auth-required">*</span></label>
-              {{ form.first_name }}
-              {% if form.first_name.errors %}<p class="auth-error">{{ form.first_name.errors.0 }}</p>{% endif %}
-            </div>
-            <div class="auth-field">
-              <label for="id_last_name">{% trans 'Last name' %} <span class="auth-required">*</span></label>
-              {{ form.last_name }}
-              {% if form.last_name.errors %}<p class="auth-error">{{ form.last_name.errors.0 }}</p>{% endif %}
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="id_email">{% trans 'Email' %} <span class="auth-required">*</span></label>
-            {{ form.email }}
-            {% if form.email.errors %}<p class="auth-error">{{ form.email.errors.0 }}</p>{% endif %}
-          </div>
-
-          <div class="auth-field-row">
-            <div class="auth-field">
-              <label for="id_phone">{% trans 'Mobile no.' %} <span class="auth-required">*</span></label>
-              {{ form.phone }}
-              {% if form.phone.errors %}<p class="auth-error">{{ form.phone.errors.0 }}</p>{% endif %}
-            </div>
-            <div class="auth-field">
-              <label for="id_gender">{% trans 'Gender' %}</label>
-              {{ form.gender }}
-              {% if form.gender.errors %}<p class="auth-error">{{ form.gender.errors.0 }}</p>{% endif %}
-            </div>
-          </div>
-
-          <div class="auth-field-row">
-            <div class="auth-field">
-              <label for="id_level">{% trans 'Level' %}</label>
-              {{ form.level }}
-              {% if form.level.errors %}<p class="auth-error">{{ form.level.errors.0 }}</p>{% endif %}
-            </div>
-            <div class="auth-field">
-              <label for="id_program">{% trans 'Program' %} <span class="auth-required">*</span></label>
-              {{ form.program }}
-              {% if form.program.errors %}<p class="auth-error">{{ form.program.errors.0 }}</p>{% endif %}
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="id_address">{% trans 'Address' %} <span class="auth-required">*</span></label>
-            {{ form.address }}
-            {% if form.address.errors %}<p class="auth-error">{{ form.address.errors.0 }}</p>{% endif %}
-          </div>
-
-          <div class="auth-field-row">
-            <div class="auth-field">
-              <label for="id_password1">{% trans 'Password' %}</label>
-              <div class="auth-password">
-                {{ form.password1 }}
-                <button type="button" class="auth-toggle-password" data-target="id_password1" aria-label="{% trans 'Show password' %}">
-                  <i class="fas fa-eye" aria-hidden="true"></i>
-                </button>
-              </div>
-              {% if form.password1.errors %}<p class="auth-error">{{ form.password1.errors.0 }}</p>{% endif %}
-            </div>
-            <div class="auth-field">
-              <label for="id_password2">{% trans 'Confirm password' %}</label>
-              <div class="auth-password">
-                {{ form.password2 }}
-                <button type="button" class="auth-toggle-password" data-target="id_password2" aria-label="{% trans 'Show password' %}">
-                  <i class="fas fa-eye" aria-hidden="true"></i>
-                </button>
-              </div>
-              {% if form.password2.errors %}<p class="auth-error">{{ form.password2.errors.0 }}</p>{% endif %}
-            </div>
-          </div>
-
-          <button type="submit" class="auth-submit" id="register-btn">{% trans 'Create account' %}</button>
-        </form>
-
-        <p class="auth-switch">{% trans 'Already registered?' %} <a href="{% url 'login' %}">{% trans 'Log in' %}</a></p>
-      </div>
-    </section>
-
-    <aside class="auth-visual" aria-hidden="true">
-      <div class="auth-bento">
-        <div class="bento-card bento-card-big">
-          <i class="fas fa-graduation-cap"></i>
-        </div>
-        <div class="bento-card bento-card-chart">
-          <i class="fas fa-chart-line"></i>
-        </div>
-        <div class="bento-card bento-card-chat">
-          <i class="fas fa-comments"></i>
-        </div>
-        <div class="bento-card bento-card-book">
-          <i class="fas fa-book-open"></i>
-        </div>
-        <div class="bento-card bento-card-accent">
-          <i class="fas fa-star"></i>
-        </div>
-        <div class="bento-card bento-card-check">
-          <i class="fas fa-check"></i>
-        </div>
-      </div>
-      <div class="auth-visual-copy">
-        <h2>{% trans 'Join the classroom.' %}</h2>
-        <p>{% trans 'Create your student account to enrol in courses, submit work and track your results.' %}</p>
-      </div>
-    </aside>
-
+{% if messages %}
+  {% for message in messages %}
+  <div class="{% if message.tags == 'error' %}auth-error{% else %}auth-success{% endif %}">
+    <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>{{ message }}
   </div>
-</main>
+  {% endfor %}
+{% endif %}
+
+<form action="" method="POST" id="register-form" novalidate>
+  {% csrf_token %}
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="auth-section-title">{% trans 'Login details' %}</div>
+      <div class="mb-3">
+        <label for="username_id" class="auth-label">{{ form.username.label }} <span class="auth-required">*</span></label>
+        {{ form.username }}
+        {% if form.username.errors %}<p class="auth-field-error">{{ form.username.errors.0 }}</p>{% endif %}
+        <div id="message-wrapper"></div>
+      </div>
+      <div class="mb-3">
+        <label for="email_id" class="auth-label">{{ form.email.label }} <span class="auth-required">*</span></label>
+        {{ form.email }}
+        {% if form.email.errors %}<p class="auth-field-error">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="password1_id" class="auth-label">{{ form.password1.label }} <span class="auth-required">*</span></label>
+        <div class="auth-password">
+          {{ form.password1 }}
+          <button type="button" class="auth-toggle-password" data-target="{{ form.password1.id_for_label }}" aria-label="{% trans 'Show password' %}">
+            <i class="fas fa-eye" aria-hidden="true"></i>
+          </button>
+        </div>
+        {% if form.password1.errors %}<p class="auth-field-error">{{ form.password1.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="password2_id" class="auth-label">{{ form.password2.label }} <span class="auth-required">*</span></label>
+        <div class="auth-password">
+          {{ form.password2 }}
+          <button type="button" class="auth-toggle-password" data-target="{{ form.password2.id_for_label }}" aria-label="{% trans 'Show password' %}">
+            <i class="fas fa-eye" aria-hidden="true"></i>
+          </button>
+        </div>
+        {% if form.password2.errors %}<p class="auth-field-error">{{ form.password2.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="auth-section-title">{% trans 'Personal info' %}</div>
+      <div class="mb-3">
+        <label for="address_id" class="auth-label">{{ form.address.label }} <span class="auth-required">*</span></label>
+        {{ form.address }}
+        {% if form.address.errors %}<p class="auth-field-error">{{ form.address.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="phone_id" class="auth-label">{{ form.phone.label }} <span class="auth-required">*</span></label>
+        {{ form.phone }}
+        {% if form.phone.errors %}<p class="auth-field-error">{{ form.phone.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="first_name_id" class="auth-label">{{ form.first_name.label }} <span class="auth-required">*</span></label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<p class="auth-field-error">{{ form.first_name.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="last_name_id" class="auth-label">{{ form.last_name.label }} <span class="auth-required">*</span></label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<p class="auth-field-error">{{ form.last_name.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="gender_id" class="auth-label">{{ form.gender.label }}</label>
+        {{ form.gender }}
+        {% if form.gender.errors %}<p class="auth-field-error">{{ form.gender.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="level_id" class="auth-label">{{ form.level.label }}</label>
+        {{ form.level }}
+        {% if form.level.errors %}<p class="auth-field-error">{{ form.level.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label for="program_id" class="auth-label">{{ form.program.label }} <span class="auth-required">*</span></label>
+        {{ form.program }}
+        {% if form.program.errors %}<p class="auth-field-error">{{ form.program.errors.0 }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary auth-submit" id="register-btn">{% trans 'Create account' %}</button>
+</form>
+
+<div class="auth-footer-link">
+  {% trans 'Already registered?' %} <a href="{% url 'login' %}">{% trans 'Sign in' %}</a>
+</div>
 {% endblock content %}
 
 {% block js %}
 
 <script>
-  $('#register-form').submit(function () {
-    $('#register-btn').addClass('disabled')
-    $('#register-btn').html(`<i class="fas fa-spinner fa-spin"></i> {% trans 'Creating your account...' %}`)
+  const registerFormEl = document.getElementById('register-form');
+  const registerBtnEl = document.getElementById('register-btn');
+
+  registerFormEl.addEventListener('submit', () => {
+    registerBtnEl.innerHTML = '{% trans "Creating your account…" %}';
+    registerBtnEl.classList.add("disabled");
   })
 
   document.querySelectorAll('.auth-toggle-password').forEach(function (btn) {

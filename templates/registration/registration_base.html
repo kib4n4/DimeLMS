@@ -1,7 +1,38 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
 
 {% block sidebar %}{% endblock %}
 
 {% block maincontent %}
-  {% block content %}{% endblock content %}
+<div class="auth-page">
+  <div class="auth-panel{% block panel_class %}{% endblock %}">
+    <div class="auth-panel-inner">
+      <div class="auth-brand">
+        <a href="/"><img src="{% static 'img/dime-logo.png' %}" alt="DIME LMS"></a>
+      </div>
+      {% block content %}{% endblock content %}
+    </div>
+  </div>
+
+  <div class="auth-visual">
+    <div class="auth-visual-glow auth-visual-glow--1"></div>
+    <div class="auth-visual-glow auth-visual-glow--2"></div>
+    <div class="auth-visual-dots"></div>
+
+    <div class="auth-visual-grid">
+      <div class="auth-tile auth-tile--a"><i class="fas fa-graduation-cap"></i></div>
+      <div class="auth-tile auth-tile--b"><i class="fas fa-chart-line"></i></div>
+      <div class="auth-tile auth-tile--c"><i class="fas fa-comments"></i></div>
+      <div class="auth-tile auth-tile--d"><i class="fas fa-book-open"></i></div>
+      <div class="auth-tile auth-tile--e auth-tile--accent"><i class="fas fa-star"></i></div>
+      <div class="auth-tile auth-tile--f"><i class="fas fa-check"></i></div>
+    </div>
+
+    <div class="auth-visual-copy">
+      <h2>{% trans 'Everything your institution needs, in one place.' %}</h2>
+      <p>{% trans 'Courses, grades, attendance and communication — unified for students, lecturers and admins.' %}</p>
+    </div>
+  </div>
+</div>
 {% endblock %}
