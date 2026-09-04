@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.views import LoginView
 from django.views.generic import CreateView, ListView
 from django.db.models import Q
 from django.utils.decorators import method_decorator
@@ -18,6 +19,7 @@ from .forms import (
     ProfileUpdateForm,
     ParentAddForm,
     ProgramUpdateForm,
+    EmailAuthenticationForm,
 )
 from .models import User, Student, Parent
 from .filters import LecturerFilter, StudentFilter
@@ -31,6 +33,25 @@ from django.template.loader import (
 )  # to render a template into a string
 
 
+class EmailLoginView(LoginView):
+    """Login view keyed on email, with an optional "remember me" checkbox.
+
+    When "remember me" is left unchecked the session expires as soon as the
+    browser is closed; when checked it falls back to Django's configured
+    SESSION_COOKIE_AGE (default 2 weeks).
+    """
+
+    authentication_form = EmailAuthenticationForm
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.POST.get("remember_me"):
+            self.request.session.set_expiry(None)
+        else:
+            self.request.session.set_expiry(0)
+        return response
+
+
 def validate_username(request):
     username = request.GET.get("username", None)
     data = {"is_taken": User.objects.filter(username__iexact=username).exists()}
@@ -42,13 +63,13 @@ def register(request):
         form = StudentAddForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, f"Account created successfuly.")
+            messages.success(request, "Account created successfully.")
         else:
             messages.error(
-                request, f"Somthing is not correct, please fill all fields correctly."
+                request, "Something is not correct, please fill all fields correctly."
             )
     else:
-        form = StudentAddForm(request.POST)
+        form = StudentAddForm()
     return render(request, "registration/register.html", {"form": form})
 
 

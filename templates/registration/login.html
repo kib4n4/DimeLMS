@@ -1,70 +1,113 @@
 {% extends 'registration/registration_base.html' %}
 {% load i18n %}
-{% block title %}{% trans 'Dj Learning Management System - Login' %}{% endblock title %}
+{% block title %}{% trans 'DIME LMS - Login' %}{% endblock title %}
 {% load crispy_forms_tags %}
+{% load static %}
+{% block header %}<link rel="stylesheet" href="{% static 'css/login.css' %}">{% endblock %}
 {% block content %}
 
-<div class="col-md-4 mx-auto mt-5">
-  <div class="card">
-    <div class="form-title">
-      <i class="fas fa-lock me-2"></i>
-      {% trans 'Sign in' %}
-    </div>
-    <div class="card-body">
-        <form action="" method="POST" id="login-form">{% csrf_token %}
-          <div class="form-group mb-3">
-              <label class="mb-2" for="username_id"><i class="fas fa-address-card me-2"></i>{% trans 'ID Number' %}</label>
-              <input type="text" name="username" id="username_id" class="form-control" required>
-              <div id="message-wrapper"></div>
+<main class="auth-page">
+  <div class="auth-shell">
+
+    <section class="auth-panel">
+      <div class="auth-panel-inner">
+        <div class="auth-brand">
+          <img src="{% static 'img/dime-logo.png' %}" alt="{% trans 'DIME' %}">
+        </div>
+
+        <div class="auth-heading">
+          <h1>{% trans 'Welcome back!' %}</h1>
+          <p>{% trans 'Enter your details to access your learning dashboard.' %}</p>
+        </div>
+
+        <form action="" method="POST" id="login-form" novalidate>{% csrf_token %}
+          <div class="auth-field">
+            <label for="id_email">{% trans 'Email' %} <span class="auth-required">*</span></label>
+            {{ form.email }}
           </div>
-          <div class="form-group mb-3">
-              <label class="mb-2" for="password_id"><i class="fas fa-key me-2"></i>{% trans 'Password' %}</label>
-              <input type="password" name="password" id="password_id" class="form-control" required>
+
+          <div class="auth-field">
+            <label for="id_password">{% trans 'Password' %} <span class="auth-required">*</span></label>
+            <div class="auth-password">
+              {{ form.password }}
+              <button type="button" class="auth-toggle-password" id="toggle-password" aria-label="{% trans 'Show password' %}">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
-          {% if form.errors %}
-                <span class="text-danger"><i class="fas fa-exclamation-circle"></i> {% trans 'Invalid ID & Password.' %}</span><br>
+
+          {% if form.non_field_errors %}
+            <p class="auth-error"><i class="fas fa-circle-exclamation" aria-hidden="true"></i>{% trans 'Invalid email or password.' %}</p>
           {% endif %}
-      
-          <button type="submit" class="btn btn-primary" id="login-btn"><i class="fas fa-sign-in-alt"></i><small>{% trans 'SIGN IN' %}</small></button>
+
+          <div class="auth-row">
+            <label class="auth-check">
+              <input type="checkbox" name="remember_me" id="id_remember_me" checked>
+              <span>{% trans 'Remember me' %}</span>
+            </label>
+            <a href="{% url 'password_reset' %}" class="auth-link">{% trans 'Forgot your password?' %}</a>
+          </div>
+
+          <button type="submit" class="auth-submit" id="login-btn">{% trans 'Log In' %}</button>
         </form>
-        <br>
-        <div class="login-bottom">
-          <a href="{% url 'password_reset' %}" class="link">{% trans 'Forgot password ?' %}</a>
+
+        <div class="auth-divider"><span>{% trans 'Or, login with' %}</span></div>
+
+        <button type="button" class="auth-google" disabled title="{% trans 'Google sign-in is not set up for this site yet.' %}">
+          <i class="fa-brands fa-google" aria-hidden="true"></i>{% trans 'Sign in with Google' %}
+        </button>
+
+        <p class="auth-switch">{% trans "Don't have an account?" %} <a href="{% url 'register' %}">{% trans 'Register here' %}</a></p>
+      </div>
+    </section>
+
+    <aside class="auth-visual" aria-hidden="true">
+      <div class="auth-bento">
+        <div class="bento-card bento-card-big">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="bento-card bento-card-chart">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="bento-card bento-card-chat">
+          <i class="fas fa-comments"></i>
+        </div>
+        <div class="bento-card bento-card-book">
+          <i class="fas fa-book-open"></i>
+        </div>
+        <div class="bento-card bento-card-accent">
+          <i class="fas fa-star"></i>
+        </div>
+        <div class="bento-card bento-card-check">
+          <i class="fas fa-check"></i>
         </div>
       </div>
+      <div class="auth-visual-copy">
+        <h2>{% trans 'Everything your institution needs, in one place.' %}</h2>
+        <p>{% trans 'Courses, grades, attendance and communication — unified for students, lecturers and admins.' %}</p>
+      </div>
+    </aside>
+
   </div>
-</div>
+</main>
 {% endblock content %}
 
 {% block js %}
 
 <script>
   $('#login-form').submit(function (e) {
-    // e.preventDefault();
     $('#login-btn').addClass('disabled')
-    $('#login-btn').html(`<i class="fas fa-sign-in-alt"></i> Signining you in . . .`)
+    $('#login-btn').html(`<i class="fas fa-spinner fa-spin"></i> {% trans 'Signing you in...' %}`)
   })
 
-  $("#username").on("input", function () {
-    username = $(this).val();
-
-    $.ajax({
-      url: "/accounts/ajax/validate-username/",
-      data: {
-        username: username
-      },
-      dataType: 'json',
-      success: function (data) {
-        if (data.is_taken) {
-          console.log(data.is_taken);
-          $('#message-wrapper').html(`<p class="my-2 text-danger"><span class="bg-error p-2"><b>${username}</b> already taken :( try another one </span></p>`)
-        }
-        else {
-          $('#message-wrapper').html(`<p class="my-2 text-success"><span class="bg-correct p-2"><b>${username}</b> is valid </span></p>`)
-        }
-      }
-
-    })
-  })
+  document.getElementById('toggle-password').addEventListener('click', function () {
+    const input = document.getElementById('id_password');
+    const icon = this.querySelector('i');
+    const willShow = input.type === 'password';
+    input.type = willShow ? 'text' : 'password';
+    icon.classList.toggle('fa-eye', !willShow);
+    icon.classList.toggle('fa-eye-slash', willShow);
+    this.setAttribute('aria-label', willShow ? '{% trans "Hide password" %}' : '{% trans "Show password" %}');
+  });
 </script>
 {% endblock %}
