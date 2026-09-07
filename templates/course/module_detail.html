@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.slug %}">{{ course }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'module_list' course.slug %}">{% trans 'Modules' %}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ module.title }}</li>
+    </ol>
+</nav>
+
+<div class="title-1">{{ module.title }}</div>
+<p class="small text-muted">
+    {% trans 'Target duration' %}: {{ module.duration_minutes }} {% trans 'min' %}
+    {% if module.summary %} · {{ module.summary }}{% endif %}
+</p>
+
+{% include 'snippets/messages.html' %}
+
+{% if can_track %}
+<div class="card mb-4">
+    <div class="p-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <p class="form-title m-0">{% trans 'Your progress on this module' %}</p>
+            <strong><span id="module-progress-pct">{{ progress.percent_covered|default:0 }}</span>%</strong>
+        </div>
+        <div class="progress" style="height: 10px;">
+            <div id="module-progress-bar" class="progress-bar {% if progress.completed %}bg-success{% endif %}" role="progressbar"
+                style="width: {{ progress.percent_covered|default:0 }}%;"
+                aria-valuenow="{{ progress.percent_covered|default:0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <p class="small text-muted mt-2 mb-0" id="module-progress-hint">
+            {% trans 'Tracked automatically while you watch a video, or while this page is open for documents/links.' %}
+        </p>
+    </div>
+</div>
+{% endif %}
+
+{% if videos %}
+<div class="row mb-5">
+    <div class="col-md-12 p-0">
+        <p class="form-title m-0"><i class="fas fa-video me-1"></i>{% trans 'Videos' %}</p>
+        {% for video in videos %}
+        <div class="card mb-3">
+            <div class="p-3">
+                <h6 class="fw-bold">{{ video.title }}</h6>
+                <video class="w-100" controls data-track-video preload="metadata">
+                    <source src="{{ video.video.url }}">
+                </video>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if links %}
+<div class="row mb-5">
+    <div class="col-md-12 p-0">
+        <p class="form-title m-0"><i class="fab fa-youtube me-1"></i>{% trans 'YouTube Links' %}</p>
+        {% for link in links %}
+        <div class="card mb-3">
+            <div class="p-3">
+                <h6 class="fw-bold">{{ link.title }}</h6>
+                {% if link.embed_url %}
+                <div class="ratio ratio-16x9">
+                    <div class="yt-tracked-player" data-track-youtube data-video-id="{{ link.youtube_id }}"></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if files %}
+<div class="row">
+    <div class="col-md-12 p-0">
+        <p class="form-title m-0">{% trans 'Documentations' %}</p>
+        <div class="table-responsive">
+            <table class="table table-shadow table-light table-striped m-0">
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td><a href="{{ file.file.url }}" target="_blank">
+                            <i class="fas fa-file-{{ file.get_extension_short }} me-1"></i> {{ file.title }}
+                        </a></td>
+                        <td class="text-end">
+                            <a class="download-btn" href="{{ file.file.url }}" download>
+                                <i class="fas fa-download me-1"></i>{% trans 'Download' %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if not files and not videos and not links %}
+<p class="text-danger">{% trans 'No content has been added to this module yet.' %}</p>
+{% endif %}
+
+<div class="manage-wrap">
+    <div class="d-flex">
+        <div>
+            {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
+            <a class="btn btn-sm btn-light" href="{% url 'module_edit' slug=course.slug pk=module.pk %}">
+                <i class="fas fa-pencil-alt"></i> {% trans 'Edit module' %}
+            </a>
+            <a class="btn btn-sm btn-primary" href="{% url 'upload_file_view' course.slug %}">
+                <i class="fas fa-plus"></i> {% trans 'Add document' %}
+            </a>
+            <a class="btn btn-sm btn-primary" href="{% url 'upload_video' course.slug %}">
+                <i class="fas fa-plus"></i> {% trans 'Add video' %}
+            </a>
+            <a class="btn btn-sm btn-primary" href="{% url 'upload_link' course.slug %}">
+                <i class="fas fa-plus"></i> {% trans 'Add YouTube link' %}
+            </a>
+            <span class="small text-muted d-block mt-1">{% trans 'Pick this module from the "Module" field on the upload form.' %}</span>
+            {% endif %}
+        </div>
+        <div class="ms-auto">
+            <a class="btn btn-sm btn-light" href="{% url 'module_list' course.slug %}">
+                <i class="fas fa-arrow-left"></i> {% trans 'Back to modules' %}
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block js %}
+{% if can_track %}
+<script>
+(function () {
+    "use strict";
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie("csrftoken");
+    const progressUrl = "{% url 'record_module_progress' pk=module.pk %}";
+
+    let pending = 0; // accumulated, not-yet-sent seconds of engaged time
+
+    function flush(useBeacon) {
+        const seconds = Math.round(pending);
+        if (seconds <= 0) return;
+        pending -= seconds;
+
+        if (useBeacon && navigator.sendBeacon) {
+            const body = new Blob(
+                ["csrfmiddlewaretoken=" + encodeURIComponent(csrftoken) + "&seconds=" + seconds],
+                { type: "application/x-www-form-urlencoded" }
+            );
+            navigator.sendBeacon(progressUrl, body);
+            return;
+        }
+
+        fetch(progressUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+            },
+            body: JSON.stringify({ seconds: seconds }),
+        })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                if (!data) return;
+                const bar = document.getElementById("module-progress-bar");
+                const pct = document.getElementById("module-progress-pct");
+                if (bar) {
+                    bar.style.width = data.percent + "%";
+                    bar.setAttribute("aria-valuenow", data.percent);
+                    bar.classList.toggle("bg-success", !!data.completed);
+                }
+                if (pct) pct.textContent = data.percent;
+            })
+            .catch(() => {});
+    }
+
+    // --- Self-hosted video tracking: real playback time only ---
+    document.querySelectorAll("video[data-track-video]").forEach(function (video) {
+        let lastTime = null;
+        video.addEventListener("play", function () {
+            lastTime = video.currentTime;
+        });
+        video.addEventListener("timeupdate", function () {
+            if (video.paused || video.seeking || lastTime === null) return;
+            const delta = video.currentTime - lastTime;
+            // ignore backward seeks and implausible forward jumps
+            if (delta > 0 && delta < 2) pending += delta;
+            lastTime = video.currentTime;
+        });
+        video.addEventListener("pause", function () {
+            lastTime = null;
+        });
+        video.addEventListener("seeking", function () {
+            lastTime = null;
+        });
+    });
+
+    // --- YouTube video tracking: real playback time via IFrame API ---
+    const ytTargets = document.querySelectorAll("[data-track-youtube]");
+    if (ytTargets.length) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.body.appendChild(tag);
+
+        window.onYouTubeIframeAPIReady = function () {
+            ytTargets.forEach(function (el, index) {
+                const elementId = "yt-tracked-" + index;
+                el.id = elementId;
+                let tickInterval = null;
+
+                new YT.Player(elementId, {
+                    videoId: el.getAttribute("data-video-id"),
+                    events: {
+                        onStateChange: function (event) {
+                            if (event.data === YT.PlayerState.PLAYING) {
+                                if (tickInterval) clearInterval(tickInterval);
+                                tickInterval = setInterval(function () {
+                                    pending += 1;
+                                }, 1000);
+                            } else if (tickInterval) {
+                                clearInterval(tickInterval);
+                                tickInterval = null;
+                            }
+                        },
+                    },
+                });
+            });
+        };
+    }
+
+    // --- Document/page-open fallback: only counts while the tab is
+    // visible, and only for modules with no video content of their own
+    // (video content is tracked by actual playback time above instead).
+    const hasVideoContent = document.querySelectorAll(
+        "video[data-track-video], [data-track-youtube]"
+    ).length > 0;
+    let visibilityInterval = null;
+    if (!hasVideoContent) {
+        visibilityInterval = setInterval(function () {
+            if (document.visibilityState === "visible") pending += 1;
+        }, 1000);
+    }
+
+    setInterval(function () {
+        flush(false);
+    }, 15000);
+
+    document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "hidden") flush(true);
+    });
+    window.addEventListener("pagehide", function () {
+        flush(true);
+    });
+})();
+</script>
+{% endif %}
+{% endblock js %}

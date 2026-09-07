@@ -335,6 +335,25 @@ class StudentAddForm(UserCreationForm):
         return user
 
 
+class StudentBulkUploadForm(forms.Form):
+    excel_file = forms.FileField(
+        label="Excel file",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "class": "form-control",
+                "accept": ".xlsx",
+            }
+        ),
+        help_text="Required columns: First Name, Last Name, Email, Phone, Address, Gender, Level, Program.",
+    )
+
+    def clean_excel_file(self):
+        excel_file = self.cleaned_data["excel_file"]
+        if not excel_file.name.lower().endswith(".xlsx"):
+            raise ValidationError("Please upload a valid Excel (.xlsx) file.")
+        return excel_file
+
+
 class ProfileUpdateForm(UserChangeForm):
     email = forms.EmailField(
         widget=forms.TextInput(

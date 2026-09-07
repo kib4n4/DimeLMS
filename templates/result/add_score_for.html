@@ -36,6 +36,11 @@
     {% csrf_token %}
     <div class="btn-flex">
         <button title="Save Score" type="submit" class="btn btn-primary">{% trans 'Save' %}</button>
+        <a href="{% url 'score_bulk_upload' course.id %}">
+            <span data-toggle="tooltip" title="Upload scores for many students at once" class="btn btn-outline-primary">
+                <i class="fas fa-file-excel"></i> {% trans 'Bulk Upload Scores' %}
+            </span>
+        </a>
         <a target="_blank" href="{% url 'result_sheet_pdf_view' id=course.id %}">
             <span data-toggle="tooltip" title="Print Result sheet" class="btn btn-warning">
                 <i class="far fa-file-pdf"></i> {% trans 'Grade report' %}

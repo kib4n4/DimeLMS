@@ -35,7 +35,7 @@
                 <th> {% trans 'Session' %} </th>
                 <th> {% trans 'Is Current Session' %} </th>
                 <th> {% trans 'Next Session Begins' %} </th>
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or request.user.is_org_admin %}
                 <th> {% trans 'Actions' %} </th>
                 {% endif %}
             </tr>
@@ -54,7 +54,7 @@
                 </th>
                 <td>{{ session.next_session_begins }}</td>
 
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or request.user.is_org_admin %}
                 <td> <div class="update-delete">
                     <a href="{% url 'edit_session' pk=session.pk %}" class="update" title="{% trans 'Edit' %}"><i class="fas fa-pencil-alt"></i></a>
                     <a href="{% url 'delete_session' pk=session.pk %}" class="delete" title="{% trans 'Delete' %}"><i class="fas fa-trash-alt"></i></a>
@@ -69,7 +69,7 @@
                   <td>
                   <span class="text-danger">
                     {% trans 'No Session.' %}
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_superuser or request.user.is_org_admin %}
                     <a href="{% url 'add_session' %}">
                     <i class="primary" style="font-size: 22px;">
                         {% trans 'Add Session Now.' %}
@@ -89,7 +89,7 @@
     </table>
 </div>
 
-{% if request.user.is_superuser %}
+{% if request.user.is_superuser or request.user.is_org_admin %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'add_session' %}"><i class="fas fa-plus"></i>{% trans 'Add New Session' %}</a>
 </div>

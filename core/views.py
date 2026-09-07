@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from accounts.decorators import admin_required, lecturer_required
+from accounts.decorators import org_admin_required, courses_read_required
 from accounts.models import User, Student
 from .forms import SessionForm, SemesterForm, NewsAndEventsForm
 from .models import NewsAndEvents, ActivityLog, Session, Semester, SiteConfiguration
@@ -12,7 +12,7 @@ from .models import NewsAndEvents, ActivityLog, Session, Semester, SiteConfigura
 # Site configuration
 # ########################################################
 @login_required
-@admin_required
+@org_admin_required
 def toggle_course_registration(request):
     if request.method == "POST":
         config = SiteConfiguration.get_solo()
@@ -39,7 +39,7 @@ def home_view(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def dashboard_view(request):
     logs = ActivityLog.objects.all().order_by("-created_at")[:10]
     gender_count = Student.get_gender_count()
@@ -55,6 +55,7 @@ def dashboard_view(request):
 
 
 @login_required
+@org_admin_required
 def post_add(request):
     if request.method == "POST":
         form = NewsAndEventsForm(request.POST)
@@ -79,7 +80,7 @@ def post_add(request):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def edit_post(request, pk):
     instance = get_object_or_404(NewsAndEvents, pk=pk)
     if request.method == "POST":
@@ -105,7 +106,7 @@ def edit_post(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def delete_post(request, pk):
     post = get_object_or_404(NewsAndEvents, pk=pk)
     title = post.title
@@ -118,7 +119,7 @@ def delete_post(request, pk):
 # Session
 # ########################################################
 @login_required
-@lecturer_required
+@courses_read_required
 def session_list_view(request):
     """Show list of all sessions"""
     sessions = Session.objects.all().order_by("-is_current_session", "-session")
@@ -126,7 +127,7 @@ def session_list_view(request):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def session_add_view(request):
     """check request method, if POST we add session otherwise show empty form"""
     if request.method == "POST":
@@ -158,7 +159,7 @@ def session_add_view(request):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def session_update_view(request, pk):
     session = Session.objects.get(pk=pk)
     if request.method == "POST":
@@ -190,7 +191,7 @@ def session_update_view(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def session_delete_view(request, pk):
     session = get_object_or_404(Session, pk=pk)
 
@@ -210,7 +211,7 @@ def session_delete_view(request, pk):
 # Semester
 # ########################################################
 @login_required
-@lecturer_required
+@courses_read_required
 def semester_list_view(request):
     semesters = Semester.objects.all().order_by("-is_current_semester", "-semester")
     return render(
@@ -223,7 +224,7 @@ def semester_list_view(request):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def semester_add_view(request):
     if request.method == "POST":
         form = SemesterForm(request.POST)
@@ -281,7 +282,7 @@ def semester_add_view(request):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def semester_update_view(request, pk):
     semester = Semester.objects.get(pk=pk)
     if request.method == "POST":
@@ -315,7 +316,7 @@ def semester_update_view(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def semester_delete_view(request, pk):
     semester = get_object_or_404(Semester, pk=pk)
     if semester.is_current_semester:

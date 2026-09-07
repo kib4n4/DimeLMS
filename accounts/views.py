@@ -12,7 +12,7 @@ from django_filters.views import FilterView
 from core.models import Session, Semester, SiteConfiguration
 from course.models import Course
 from result.models import TakenCourse
-from .decorators import admin_required
+from .decorators import org_admin_required, students_read_required
 from .forms import (
     StaffAddForm,
     StudentAddForm,
@@ -21,10 +21,16 @@ from .forms import (
     ProgramUpdateForm,
     EmailAuthenticationForm,
     LecturerBulkUploadForm,
+    StudentBulkUploadForm,
 )
 from .models import User, Student, Parent
 from .filters import LecturerFilter, StudentFilter
-from .utils import parse_lecturer_bulk_upload, build_lecturer_bulk_upload_template
+from .utils import (
+    parse_lecturer_bulk_upload,
+    build_lecturer_bulk_upload_template,
+    parse_student_bulk_upload,
+    build_student_bulk_upload_template,
+)
 
 # to generate pdf from template we need the following
 from django.http import HttpResponse
@@ -139,7 +145,7 @@ def render_to_pdf(template_name, context):
 
 
 @login_required
-@admin_required
+@students_read_required
 def profile_single(request, id):
     """Show profile of any selected user"""
     if request.user.id == id:
@@ -234,7 +240,7 @@ def profile_single(request, id):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def admin_panel(request):
     return render(
         request,
@@ -300,7 +306,7 @@ def change_password(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def staff_add_view(request):
     if request.method == "POST":
         form = StaffAddForm(request.POST)
@@ -334,7 +340,7 @@ def staff_add_view(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def lecturer_bulk_upload_view(request):
     row_errors = []
     created_users = []
@@ -370,7 +376,7 @@ def lecturer_bulk_upload_view(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def lecturer_bulk_upload_template(request):
     wb = build_lecturer_bulk_upload_template()
     response = HttpResponse(
@@ -384,7 +390,7 @@ def lecturer_bulk_upload_template(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def edit_staff(request, pk):
     instance = get_object_or_404(User, is_lecturer=True, pk=pk)
     if request.method == "POST":
@@ -409,7 +415,7 @@ def edit_staff(request, pk):
     )
 
 
-@method_decorator([login_required, admin_required], name="dispatch")
+@method_decorator([login_required, org_admin_required], name="dispatch")
 class LecturerFilterView(FilterView):
     filterset_class = LecturerFilter
     queryset = User.objects.filter(is_lecturer=True)
@@ -423,6 +429,8 @@ class LecturerFilterView(FilterView):
 
 
 # lecturers list pdf
+@login_required
+@org_admin_required
 def render_lecturer_pdf_list(request):
     lecturers = User.objects.filter(is_lecturer=True)
     template_path = "pdf/lecturer_list.html"
@@ -451,7 +459,7 @@ def render_lecturer_pdf_list(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def delete_staff(request, pk):
     lecturer = get_object_or_404(User, pk=pk)
     full_name = lecturer.get_full_name
@@ -467,7 +475,7 @@ def delete_staff(request, pk):
 # Student views
 # ########################################################
 @login_required
-@admin_required
+@org_admin_required
 def student_add_view(request):
     if request.method == "POST":
         form = StudentAddForm(request.POST)
@@ -500,7 +508,57 @@ def student_add_view(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
+def student_bulk_upload_view(request):
+    row_errors = []
+    created_users = []
+
+    if request.method == "POST":
+        form = StudentBulkUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            created_users, row_errors = parse_student_bulk_upload(
+                form.cleaned_data["excel_file"]
+            )
+            if created_users:
+                messages.success(
+                    request,
+                    f"{len(created_users)} student account(s) created. "
+                    "Each will receive an email with their login credentials.",
+                )
+            if row_errors:
+                messages.error(
+                    request,
+                    f"{len(row_errors)} row(s) could not be imported — see details below.",
+                )
+            form = StudentBulkUploadForm()
+    else:
+        form = StudentBulkUploadForm()
+
+    context = {
+        "title": "Bulk Upload Students",
+        "form": form,
+        "row_errors": row_errors,
+        "created_count": len(created_users),
+    }
+    return render(request, "accounts/student_bulk_upload.html", context)
+
+
+@login_required
+@org_admin_required
+def student_bulk_upload_template(request):
+    wb = build_student_bulk_upload_template()
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        'attachment; filename="students_bulk_upload_template.xlsx"'
+    )
+    wb.save(response)
+    return response
+
+
+@login_required
+@org_admin_required
 def edit_student(request, pk):
     # instance = User.objects.get(pk=pk)
     instance = get_object_or_404(User, is_student=True, pk=pk)
@@ -526,7 +584,7 @@ def edit_student(request, pk):
     )
 
 
-@method_decorator([login_required, admin_required], name="dispatch")
+@method_decorator([login_required, students_read_required], name="dispatch")
 class StudentListView(FilterView):
     queryset = Student.objects.all()
     filterset_class = StudentFilter
@@ -540,6 +598,8 @@ class StudentListView(FilterView):
 
 
 # student list pdf
+@login_required
+@students_read_required
 def render_student_pdf_list(request):
     students = Student.objects.all()
     template_path = "pdf/student_list.html"
@@ -560,7 +620,7 @@ def render_student_pdf_list(request):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def delete_student(request, pk):
     student = get_object_or_404(Student, pk=pk)
     # full_name = student.user.get_full_name
@@ -570,7 +630,7 @@ def delete_student(request, pk):
 
 
 @login_required
-@admin_required
+@org_admin_required
 def edit_student_program(request, pk):
 
     instance = get_object_or_404(Student, student_id=pk)

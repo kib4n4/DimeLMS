@@ -24,8 +24,10 @@ from reportlab.lib import colors
 from accounts.models import Student
 from core.models import Session, Semester
 from course.models import Course
-from accounts.decorators import lecturer_required, student_required
+from accounts.decorators import student_required, exams_write_required
 from .models import TakenCourse, Result, FIRST, SECOND
+from .forms import ScoreBulkUploadForm
+from .utils import build_score_bulk_upload_template, parse_score_bulk_upload
 
 
 cm = 2.54
@@ -35,7 +37,7 @@ cm = 2.54
 # Score Add & Add for
 # ########################################################
 @login_required
-@lecturer_required
+@exams_write_required
 def add_score(request):
     """
     Shows a page where a lecturer will select a course allocated
@@ -65,7 +67,7 @@ def add_score(request):
 
 
 @login_required
-@lecturer_required
+@exams_write_required
 def add_score_for(request, id):
     """
     Shows a page where a lecturer will add score for students that
@@ -205,6 +207,63 @@ def add_score_for(request, id):
 
 
 # ########################################################
+# Bulk score upload
+# ########################################################
+@login_required
+@exams_write_required
+def score_bulk_upload_view(request, id):
+    """
+    Lets a facilitator (or org admin / superuser) download a spreadsheet of
+    everyone currently registered for one of their courses, edit marks in
+    it, and re-upload it to record scores for many students at once —
+    instead of typing every field into the on-page table.
+    """
+    course = get_object_or_404(
+        Course, pk=id, allocated_course__lecturer=request.user
+    )
+    row_errors = []
+    if request.method == "POST":
+        form = ScoreBulkUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            updated_count, row_errors = parse_score_bulk_upload(
+                form.cleaned_data["excel_file"], course, request.user
+            )
+            if updated_count:
+                messages.success(
+                    request, f"Recorded scores for {updated_count} student(s)."
+                )
+            if not row_errors and updated_count:
+                return HttpResponseRedirect(
+                    reverse_lazy("add_score_for", kwargs={"id": id})
+                )
+    else:
+        form = ScoreBulkUploadForm()
+
+    context = {
+        "title": "Bulk Upload Scores",
+        "course": course,
+        "form": form,
+        "row_errors": row_errors,
+    }
+    return render(request, "result/score_bulk_upload.html", context)
+
+
+@login_required
+@exams_write_required
+def score_bulk_upload_template(request, id):
+    course = get_object_or_404(
+        Course, pk=id, allocated_course__lecturer=request.user
+    )
+    wb = build_score_bulk_upload_template(course)
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="score_upload_template.xlsx"'
+    wb.save(response)
+    return response
+
+
+# ########################################################
 
 
 @login_required
@@ -288,7 +347,7 @@ def assessment_result(request):
 
 
 @login_required
-@lecturer_required
+@exams_write_required
 def result_sheet_pdf_view(request, id):
     current_semester = Semester.objects.get(is_current_semester=True)
     current_session = Session.objects.get(is_current_session=True)

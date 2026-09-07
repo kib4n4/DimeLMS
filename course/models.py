@@ -40,6 +40,23 @@ SEMESTER = (
     (THIRD, _("Third")),
 )
 
+# A course's length_type picks the recommended per-module duration band
+# shown as guidance on the module form — it isn't hard-enforced, a
+# facilitator can still save a module outside the range.
+LONG_COURSE = "long"
+SHORT_COURSE = "short"
+
+COURSE_LENGTH = (
+    (LONG_COURSE, _("Long course (modules ~2h–2h30m)")),
+    (SHORT_COURSE, _("Short course (modules ~45m–1h)")),
+)
+
+# (min minutes, max minutes) recommended band per length_type.
+MODULE_DURATION_RANGE = {
+    LONG_COURSE: (120, 150),
+    SHORT_COURSE: (45, 60),
+}
+
 
 class ProgramManager(models.Manager):
     def search(self, query=None):
@@ -109,6 +126,15 @@ class Course(models.Model):
         related_name="courses",
     )
     is_elective = models.BooleanField(default=False, blank=True, null=True)
+    length_type = models.CharField(
+        max_length=10,
+        choices=COURSE_LENGTH,
+        default=LONG_COURSE,
+        help_text=_(
+            "Picks the recommended per-module duration shown when adding a "
+            "module to this course."
+        ),
+    )
 
     objects = CourseManager()
 
@@ -121,6 +147,36 @@ class Course(models.Model):
     @property
     def is_current_semester(self):
         return bool(self.semester_id and self.semester.is_current_semester)
+
+    @property
+    def recommended_module_duration(self):
+        """(min minutes, max minutes) guidance band for this course's length_type."""
+        return MODULE_DURATION_RANGE.get(self.length_type, MODULE_DURATION_RANGE[LONG_COURSE])
+
+    def progress_for_student(self, student):
+        """
+        Weighted-average completion percentage (0-100, int) across this
+        course's modules for `student` — each module's share of the total
+        is proportional to its target duration. A course with no modules
+        (or none with a duration) returns None rather than 0, so templates
+        can distinguish "nothing to track yet" from "0% complete".
+        """
+        modules = list(self.modules.all())
+        total_duration = sum(m.duration_minutes for m in modules)
+        if not total_duration:
+            return None
+        progress_by_module = {
+            p.module_id: p
+            for p in ModuleProgress.objects.filter(
+                student=student, module__course=self
+            )
+        }
+        covered = 0
+        for module in modules:
+            progress = progress_by_module.get(module.id)
+            percent = progress.percent_covered if progress else 0
+            covered += percent * module.duration_minutes
+        return round(covered / total_duration)
 
 
 def course_pre_save_receiver(sender, instance, *args, **kwargs):
@@ -160,9 +216,73 @@ class CourseAllocation(models.Model):
         return reverse("edit_allocated_course", kwargs={"pk": self.pk})
 
 
+class Module(models.Model):
+    """
+    A titled, ordered lesson within a course — the unit course/module
+    tracking is measured against. Files, videos and YouTube links are
+    optionally grouped under a module via their own `module` field; a
+    module's `duration_minutes` is the target a student's tracked time
+    (see ModuleProgress) is measured against.
+    """
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(blank=True, unique=True)
+    summary = models.TextField(blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+    duration_minutes = models.PositiveIntegerField(
+        help_text=_("Target duration for this module, in minutes.")
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.title} ({self.course})"
+
+    def get_absolute_url(self):
+        return reverse(
+            "module_detail", kwargs={"slug": self.course.slug, "pk": self.pk}
+        )
+
+    @property
+    def duration_seconds(self):
+        return self.duration_minutes * 60
+
+    def progress_for_student(self, student):
+        return ModuleProgress.objects.filter(student=student, module=self).first()
+
+
+def module_pre_save_receiver(sender, instance, *args, **kwargs):
+    if not instance.slug:
+        instance.slug = unique_slug_generator(instance)
+
+
+pre_save.connect(module_pre_save_receiver, sender=Module)
+
+
+@receiver(post_save, sender=Module)
+def log_save(sender, instance, created, **kwargs):
+    verb = "created" if created else "updated"
+    ActivityLog.objects.create(
+        message=_(f"The module '{instance.title}' of '{instance.course}' has been {verb}.")
+    )
+
+
+@receiver(post_delete, sender=Module)
+def log_delete(sender, instance, **kwargs):
+    ActivityLog.objects.create(
+        message=_(f"The module '{instance.title}' of '{instance.course}' has been deleted.")
+    )
+
+
 class Upload(models.Model):
     title = models.CharField(max_length=100)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    module = models.ForeignKey(
+        Module, on_delete=models.SET_NULL, null=True, blank=True, related_name="uploads"
+    )
     file = models.FileField(
         upload_to="course_files/",
         help_text="Valid Files: pdf, docx, doc, xls, xlsx, ppt, pptx, zip, rar, 7zip",
@@ -238,6 +358,9 @@ class UploadVideo(models.Model):
     title = models.CharField(max_length=100)
     slug = models.SlugField(blank=True, unique=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    module = models.ForeignKey(
+        Module, on_delete=models.SET_NULL, null=True, blank=True, related_name="videos"
+    )
     video = models.FileField(
         upload_to="course_videos/",
         help_text=_("Valid video formats: mp4, mkv, wmv, 3gp, f4v, avi, mp3"),
@@ -302,6 +425,9 @@ class CourseLink(models.Model):
     title = models.CharField(max_length=100)
     slug = models.SlugField(blank=True, unique=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    module = models.ForeignKey(
+        Module, on_delete=models.SET_NULL, null=True, blank=True, related_name="links"
+    )
     url = models.URLField(
         help_text=_(
             "A YouTube link, e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
@@ -365,6 +491,39 @@ def log_delete(sender, instance, **kwargs):
             f"The link '{instance.title}' of the course '{instance.course}' has been deleted."
         )
     )
+
+
+class ModuleProgress(models.Model):
+    """
+    One student's tracked time on one module. `seconds_covered` accumulates
+    from the browser-side tracker (real video playback time for videos,
+    time-on-page for documents/links — see record_module_progress) and is
+    capped at the module's target duration; `percent_covered` and
+    `completed` are derived from that against `module.duration_seconds`.
+    """
+
+    student = models.ForeignKey(
+        "accounts.Student", on_delete=models.CASCADE, related_name="module_progress"
+    )
+    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="progress")
+    seconds_covered = models.PositiveIntegerField(default=0)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    last_activity = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("student", "module")
+        verbose_name_plural = "Module progress"
+
+    def __str__(self):
+        return f"{self.student} — {self.module} ({self.percent_covered}%)"
+
+    @property
+    def percent_covered(self):
+        target = self.module.duration_seconds
+        if not target:
+            return 0
+        return round(min(self.seconds_covered, target) / target * 100)
 
 
 class CourseOffer(models.Model):

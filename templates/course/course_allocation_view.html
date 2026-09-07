@@ -25,7 +25,7 @@
                 <th>#</th>
                 <th>{% trans 'Lecturer' %}</th>
                 <th>C{% trans 'Courses' %}</th>
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or request.user.is_org_admin %}
                 <th>{% trans 'Action' %}</th>
                 {% endif %}
             </tr>
@@ -39,7 +39,7 @@
                         <div class="flex"><a class="edit-btn" href="{{ i.get_absolute_url }}">{{ i }}</a></div>
                     {% endfor %}</div>
                 </td>
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or request.user.is_org_admin %}
                 <td><div class="update-delete">
                     <a href="{% url 'edit_allocated_course' pk=course.pk %}" class="update" title="{% trans 'Edit or Update' %}">
                         <i class="fas fa-edit"></i>
@@ -57,7 +57,7 @@
               <td></td>
               <td>
                 <span class="text-danger">{% trans 'No Course Allocated.' %}
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_superuser or request.user.is_org_admin %}
                     <a href="{% url 'course_allocation' %}">
                     <i class="primary" style="font-size: 22px;">
                         {% trans 'Allocate now' %}
@@ -74,7 +74,7 @@
     </table>
 </div>
 
-{% if request.user.is_superuser %}
+{% if request.user.is_superuser or request.user.is_org_admin %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'course_allocation' %}"><i class="fas fa-plus"></i>{% trans 'Allocate Now' %}</a>
 </div>

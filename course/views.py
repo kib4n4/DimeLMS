@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db.models import Sum, Avg, Max, Min, Count
@@ -5,14 +7,23 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django_filters.views import FilterView
 
 from accounts.models import User, Student
 from core.models import Session, Semester, SiteConfiguration
 from result.models import TakenCourse
-from accounts.decorators import lecturer_required, student_required
+from accounts.decorators import (
+    student_required,
+    org_admin_required,
+    courses_read_required,
+    course_materials_write_required,
+    students_read_required,
+)
 from .forms import (
     ProgramForm,
     CourseAddForm,
@@ -21,12 +32,22 @@ from .forms import (
     UploadFormFile,
     UploadFormVideo,
     UploadFormLink,
+    ModuleForm,
 )
 from .filters import ProgramFilter, CourseAllocationFilter
-from .models import Program, Course, CourseAllocation, Upload, UploadVideo, CourseLink
+from .models import (
+    Program,
+    Course,
+    CourseAllocation,
+    Upload,
+    UploadVideo,
+    CourseLink,
+    Module,
+    ModuleProgress,
+)
 
 
-@method_decorator([login_required, lecturer_required], name="dispatch")
+@method_decorator([login_required, courses_read_required], name="dispatch")
 class ProgramFilterView(FilterView):
     filterset_class = ProgramFilter
     template_name = "course/program_list.html"
@@ -38,7 +59,7 @@ class ProgramFilterView(FilterView):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def program_add(request):
     if request.method == "POST":
         form = ProgramForm(request.POST)
@@ -87,7 +108,7 @@ def program_detail(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def program_edit(request, pk):
     program = Program.objects.get(pk=pk)
 
@@ -110,7 +131,7 @@ def program_edit(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def program_delete(request, pk):
     program = Program.objects.get(pk=pk)
     title = program.title
@@ -152,7 +173,7 @@ def course_single(request, slug):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def course_add(request, pk):
     users = User.objects.all()
     if request.method == "POST":
@@ -183,7 +204,7 @@ def course_add(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def course_edit(request, slug):
     course = get_object_or_404(Course, slug=slug)
     if request.method == "POST":
@@ -213,7 +234,7 @@ def course_edit(request, slug):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def course_delete(request, slug):
     course = Course.objects.get(slug=slug)
     # course_name = course.title
@@ -229,7 +250,7 @@ def course_delete(request, slug):
 # ########################################################
 # Course Allocation
 # ########################################################
-@method_decorator([login_required], name="dispatch")
+@method_decorator([login_required, org_admin_required], name="dispatch")
 class CourseAllocationFormView(CreateView):
     form_class = CourseAllocationForm
     template_name = "course/course_allocation_form.html"
@@ -263,7 +284,7 @@ class CourseAllocationFormView(CreateView):
         return context
 
 
-@method_decorator([login_required], name="dispatch")
+@method_decorator([login_required, org_admin_required], name="dispatch")
 class CourseAllocationFilterView(FilterView):
     filterset_class = CourseAllocationFilter
     template_name = "course/course_allocation_view.html"
@@ -275,7 +296,7 @@ class CourseAllocationFilterView(FilterView):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def edit_allocated_course(request, pk):
     allocated = get_object_or_404(CourseAllocation, pk=pk)
     if request.method == "POST":
@@ -295,7 +316,7 @@ def edit_allocated_course(request, pk):
 
 
 @login_required
-@lecturer_required
+@org_admin_required
 def deallocate_course(request, pk):
     course = CourseAllocation.objects.get(pk=pk)
     course.delete()
@@ -310,11 +331,11 @@ def deallocate_course(request, pk):
 # File Upload views
 # ########################################################
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_file_upload(request, slug):
     course = Course.objects.get(slug=slug)
     if request.method == "POST":
-        form = UploadFormFile(request.POST, request.FILES)
+        form = UploadFormFile(request.POST, request.FILES, course=course)
         if form.is_valid():
             obj = form.save(commit=False)
             obj.course = course
@@ -325,7 +346,7 @@ def handle_file_upload(request, slug):
             )
             return redirect("course_detail", slug=slug)
     else:
-        form = UploadFormFile()
+        form = UploadFormFile(course=course)
     return render(
         request,
         "upload/upload_file_form.html",
@@ -334,12 +355,12 @@ def handle_file_upload(request, slug):
 
 
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_file_edit(request, slug, file_id):
     course = Course.objects.get(slug=slug)
     instance = Upload.objects.get(pk=file_id)
     if request.method == "POST":
-        form = UploadFormFile(request.POST, request.FILES, instance=instance)
+        form = UploadFormFile(request.POST, request.FILES, instance=instance, course=course)
         # file_name = request.POST.get('name')
         if form.is_valid():
             form.save()
@@ -348,7 +369,7 @@ def handle_file_edit(request, slug, file_id):
             )
             return redirect("course_detail", slug=slug)
     else:
-        form = UploadFormFile(instance=instance)
+        form = UploadFormFile(instance=instance, course=course)
 
     return render(
         request,
@@ -358,7 +379,7 @@ def handle_file_edit(request, slug, file_id):
 
 
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_file_delete(request, slug, file_id):
     file = Upload.objects.get(pk=file_id)
     # file_name = file.name
@@ -372,11 +393,11 @@ def handle_file_delete(request, slug, file_id):
 # Video Upload views
 # ########################################################
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_video_upload(request, slug):
     course = Course.objects.get(slug=slug)
     if request.method == "POST":
-        form = UploadFormVideo(request.POST, request.FILES)
+        form = UploadFormVideo(request.POST, request.FILES, course=course)
         if form.is_valid():
             obj = form.save(commit=False)
             obj.course = course
@@ -387,7 +408,7 @@ def handle_video_upload(request, slug):
             )
             return redirect("course_detail", slug=slug)
     else:
-        form = UploadFormVideo()
+        form = UploadFormVideo(course=course)
     return render(
         request,
         "upload/upload_video_form.html",
@@ -396,7 +417,7 @@ def handle_video_upload(request, slug):
 
 
 @login_required
-# @lecturer_required
+# @course_materials_write_required
 def handle_video_single(request, slug, video_slug):
     course = get_object_or_404(Course, slug=slug)
     video = get_object_or_404(UploadVideo, slug=video_slug)
@@ -404,12 +425,12 @@ def handle_video_single(request, slug, video_slug):
 
 
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_video_edit(request, slug, video_slug):
     course = Course.objects.get(slug=slug)
     instance = UploadVideo.objects.get(slug=video_slug)
     if request.method == "POST":
-        form = UploadFormVideo(request.POST, request.FILES, instance=instance)
+        form = UploadFormVideo(request.POST, request.FILES, instance=instance, course=course)
         if form.is_valid():
             form.save()
             messages.success(
@@ -417,7 +438,7 @@ def handle_video_edit(request, slug, video_slug):
             )
             return redirect("course_detail", slug=slug)
     else:
-        form = UploadFormVideo(instance=instance)
+        form = UploadFormVideo(instance=instance, course=course)
 
     return render(
         request,
@@ -427,7 +448,7 @@ def handle_video_edit(request, slug, video_slug):
 
 
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_video_delete(request, slug, video_slug):
     video = get_object_or_404(UploadVideo, slug=video_slug)
     # video = UploadVideo.objects.get(slug=video_slug)
@@ -441,11 +462,11 @@ def handle_video_delete(request, slug, video_slug):
 # YouTube link "upload" views
 # ########################################################
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_link_upload(request, slug):
     course = get_object_or_404(Course, slug=slug)
     if request.method == "POST":
-        form = UploadFormLink(request.POST)
+        form = UploadFormLink(request.POST, course=course)
         if form.is_valid():
             obj = form.save(commit=False)
             obj.course = course
@@ -456,7 +477,7 @@ def handle_link_upload(request, slug):
             )
             return redirect("course_detail", slug=slug)
     else:
-        form = UploadFormLink()
+        form = UploadFormLink(course=course)
     return render(
         request,
         "upload/upload_link_form.html",
@@ -472,12 +493,12 @@ def handle_link_single(request, slug, link_slug):
 
 
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_link_edit(request, slug, link_slug):
     course = get_object_or_404(Course, slug=slug)
     instance = get_object_or_404(CourseLink, slug=link_slug)
     if request.method == "POST":
-        form = UploadFormLink(request.POST, instance=instance)
+        form = UploadFormLink(request.POST, instance=instance, course=course)
         if form.is_valid():
             form.save()
             messages.success(
@@ -485,7 +506,7 @@ def handle_link_edit(request, slug, link_slug):
             )
             return redirect("course_detail", slug=slug)
     else:
-        form = UploadFormLink(instance=instance)
+        form = UploadFormLink(instance=instance, course=course)
 
     return render(
         request,
@@ -495,13 +516,246 @@ def handle_link_edit(request, slug, link_slug):
 
 
 @login_required
-@lecturer_required
+@course_materials_write_required
 def handle_link_delete(request, slug, link_slug):
     link = get_object_or_404(CourseLink, slug=link_slug)
     link.delete()
 
     messages.success(request, (link.title + " has been deleted."))
     return redirect("course_detail", slug=slug)
+
+
+# ########################################################
+
+
+# ########################################################
+# Modules & progress tracking
+# ########################################################
+@login_required
+@courses_read_required
+def module_list(request, slug):
+    """
+    Everyone who can read the course can see its modules. A registered
+    student additionally sees their own per-module progress bar and the
+    course's overall completion; a facilitator/org admin/superuser sees
+    duration + manage controls plus a link to the class-wide tracker.
+    """
+    course = get_object_or_404(Course, slug=slug)
+    modules = course.modules.all()
+
+    student = None
+    is_registered_student = False
+    progress_by_module = {}
+    course_progress = None
+    if request.user.is_student:
+        student = Student.objects.filter(student=request.user).first()
+        is_registered_student = bool(
+            student and TakenCourse.objects.filter(student=student, course=course).exists()
+        )
+        if is_registered_student:
+            progress_by_module = {
+                p.module_id: p
+                for p in ModuleProgress.objects.filter(student=student, module__course=course)
+            }
+            course_progress = course.progress_for_student(student)
+
+    modules = list(modules)
+    for module in modules:
+        module.my_progress = progress_by_module.get(module.id)
+
+    return render(
+        request,
+        "course/module_list.html",
+        {
+            "title": f"Modules — {course.title}",
+            "course": course,
+            "modules": modules,
+            "course_progress": course_progress,
+            "is_registered_student": is_registered_student,
+        },
+    )
+
+
+@login_required
+@course_materials_write_required
+def module_add(request, slug):
+    course = get_object_or_404(Course, slug=slug)
+    if request.method == "POST":
+        form = ModuleForm(request.POST, course=course)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.course = course
+            obj.save()
+            low, high = course.recommended_module_duration
+            if not (low <= obj.duration_minutes <= high):
+                messages.warning(
+                    request,
+                    f'"{obj.title}" was saved, but {obj.duration_minutes} minutes is '
+                    f"outside the recommended {low}–{high} minute range for a "
+                    f"{course.get_length_type_display()}.",
+                )
+            messages.success(request, f'Module "{obj.title}" has been created.')
+            return redirect("module_list", slug=slug)
+    else:
+        form = ModuleForm(course=course)
+    return render(
+        request,
+        "course/module_form.html",
+        {"title": "Add Module", "form": form, "course": course},
+    )
+
+
+@login_required
+@course_materials_write_required
+def module_edit(request, slug, pk):
+    course = get_object_or_404(Course, slug=slug)
+    instance = get_object_or_404(Module, pk=pk, course=course)
+    if request.method == "POST":
+        form = ModuleForm(request.POST, instance=instance, course=course)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Module "{instance.title}" has been updated.')
+            return redirect("module_list", slug=slug)
+    else:
+        form = ModuleForm(instance=instance, course=course)
+    return render(
+        request,
+        "course/module_form.html",
+        {"title": f"Edit — {instance.title}", "form": form, "course": course},
+    )
+
+
+@login_required
+@course_materials_write_required
+def module_delete(request, slug, pk):
+    course = get_object_or_404(Course, slug=slug)
+    module = get_object_or_404(Module, pk=pk, course=course)
+    title = module.title
+    module.delete()
+    messages.success(request, f'Module "{title}" has been deleted.')
+    return redirect("module_list", slug=slug)
+
+
+@login_required
+@courses_read_required
+def module_detail(request, slug, pk):
+    course = get_object_or_404(Course, slug=slug)
+    module = get_object_or_404(Module, pk=pk, course=course)
+
+    student = None
+    progress = None
+    can_track = False
+    if request.user.is_student:
+        student = Student.objects.filter(student=request.user).first()
+        if student and TakenCourse.objects.filter(student=student, course=course).exists():
+            can_track = True
+            progress, _created = ModuleProgress.objects.get_or_create(
+                student=student, module=module
+            )
+
+    return render(
+        request,
+        "course/module_detail.html",
+        {
+            "title": module.title,
+            "course": course,
+            "module": module,
+            "files": module.uploads.all(),
+            "videos": module.videos.all(),
+            "links": module.links.all(),
+            "progress": progress,
+            "can_track": can_track,
+        },
+    )
+
+
+@login_required
+@student_required
+@require_POST
+def record_module_progress(request, pk):
+    """
+    Browser-side progress heartbeat (see module_detail.html's tracker
+    script). Body: {"seconds": <int seconds of engaged time since the last
+    heartbeat>}. Adds that to the student's ModuleProgress for this module
+    (capped at the module's target duration) and returns the updated
+    totals so the page can redraw its progress bar without a reload.
+    """
+    module = get_object_or_404(Module, pk=pk)
+    student = Student.objects.filter(student=request.user).first()
+    if not student or not TakenCourse.objects.filter(
+        student=student, course=module.course
+    ).exists():
+        return HttpResponseForbidden("Not registered for this course.")
+
+    # The periodic heartbeat sends JSON; the unload-time flush (sent via
+    # navigator.sendBeacon, which can't set custom headers) sends a plain
+    # form body instead so the CSRF middleware can validate it the normal
+    # way — accept either.
+    try:
+        payload = json.loads(request.body or "{}")
+        seconds = int(payload.get("seconds", 0))
+    except (ValueError, TypeError):
+        try:
+            seconds = int(request.POST.get("seconds", 0))
+        except (TypeError, ValueError):
+            return HttpResponseBadRequest("Invalid payload.")
+    if seconds < 0:
+        return HttpResponseBadRequest("Invalid payload.")
+    seconds = min(seconds, 300)  # ignore implausible single-heartbeat jumps
+
+    progress, _created = ModuleProgress.objects.get_or_create(
+        student=student, module=module
+    )
+    target = module.duration_seconds
+    progress.seconds_covered = min(progress.seconds_covered + seconds, target) if target else progress.seconds_covered
+    if target and progress.seconds_covered >= target and not progress.completed:
+        progress.completed = True
+        progress.completed_at = timezone.now()
+    progress.save()
+
+    return JsonResponse(
+        {
+            "seconds_covered": progress.seconds_covered,
+            "percent": progress.percent_covered,
+            "completed": progress.completed,
+            "course_percent": module.course.progress_for_student(student),
+        }
+    )
+
+
+@method_decorator([login_required, students_read_required], name="dispatch")
+class CourseTrackerRosterView(ListView):
+    """Facilitator/org admin/superuser view of every registered student's
+    progress through a course's modules."""
+
+    template_name = "course/course_tracker_roster.html"
+    context_object_name = "rows"
+
+    def get_course(self):
+        return get_object_or_404(Course, slug=self.kwargs["slug"])
+
+    def get_queryset(self):
+        course = self.get_course()
+        taken = TakenCourse.objects.filter(course=course).select_related(
+            "student", "student__student"
+        )
+        rows = []
+        for tc in taken:
+            rows.append(
+                {
+                    "student": tc.student,
+                    "percent": course.progress_for_student(tc.student),
+                }
+            )
+        return rows
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        course = self.get_course()
+        context["title"] = f"Class progress — {course.title}"
+        context["course"] = course
+        context["modules"] = course.modules.all()
+        return context
 
 
 # ########################################################
@@ -639,6 +893,8 @@ def user_course_list(request):
         courses = Course.objects.filter(level=student.level).filter(
             program__pk=student.program.id
         )
+        for taken in taken_courses:
+            taken.progress = taken.course.progress_for_student(student)
 
         return render(
             request,
