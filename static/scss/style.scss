@@ -533,14 +533,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 // ************* Page action toolbar *************
-// Sits in normal document flow, right where it appears in the markup
-// (just below the breadcrumb) — not floated, so it can never cover content.
+// Sits in normal document flow at the end of the page's content, as a
+// footer-style action bar — not floated, so it can never cover content.
 .manage-wrap {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ########################## Form ########################## */
@@ -847,7 +849,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .admin-panel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: var(--space-3);
 }
 

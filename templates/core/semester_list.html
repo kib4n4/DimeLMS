@@ -11,12 +11,6 @@
     </ol>
 </nav>
 
-{% if request.user.is_superuser %}
-<div class="manage-wrap">
-    <a class="btn btn-primary" href="{% url 'add_semester' %}"><i class="fas fa-plus"></i>{% trans 'Add New Semester' %}</a>
-</div>
-{% endif %}
-
 <div class="title-1"><i class="fas fa-calendar-alt"></i>{% trans 'Semester List' %}</div>
 
 {% if messages %}
@@ -100,4 +94,10 @@
         </tbody>
     </table>
 </div>
+
+{% if request.user.is_superuser %}
+<div class="manage-wrap">
+    <a class="btn btn-primary" href="{% url 'add_semester' %}"><i class="fas fa-plus"></i>{% trans 'Add New Semester' %}</a>
+</div>
+{% endif %}
 {% endblock content %}
