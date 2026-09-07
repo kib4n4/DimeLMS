@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }} | {% trans 'DIME LMS' %}{% endblock title %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'lecturer_list' %}">{% trans 'Facilitators' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Bulk Upload' %}</li>
+    </ol>
+</nav>
+
+<h4 class="fw-bold mb-3"><i class="fas fa-file-excel me-2"></i>{% trans 'Bulk Upload Facilitators' %}</h4>
+
+{% include 'snippets/messages.html' %}
+
+<div class="row mb-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <p class="form-title">{% trans 'Upload' %}</p>
+            <div class="p-2">
+                <p class="text-muted">
+                    {% trans 'Upload an Excel (.xlsx) file with one facilitator per row. The first row must be a header with these exact column names:' %}
+                </p>
+                <ul class="text-muted">
+                    <li>{% trans 'First Name' %}</li>
+                    <li>{% trans 'Last Name' %}</li>
+                    <li>{% trans 'Email' %}</li>
+                    <li>{% trans 'Phone' %}</li>
+                    <li>{% trans 'Address' %}</li>
+                </ul>
+                <p class="text-muted">
+                    {% trans "Don't set a username or password — each facilitator gets a login generated automatically and emailed to them, the same as adding one at a time." %}
+                </p>
+                <a class="btn btn-outline-primary btn-sm mb-3" href="{% url 'lecturer_bulk_upload_template' %}">
+                    <i class="fas fa-download"></i> {% trans 'Download Excel template' %}
+                </a>
+
+                <form action="" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                    {{ form.excel_file|as_crispy_field }}
+                    <input class="btn btn-primary mt-2" type="submit" value="{% trans 'Upload' %}">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if row_errors %}
+    <div class="col-lg-6">
+        <div class="card">
+            <p class="form-title text-danger">{% trans 'Rows that could not be imported' %}</p>
+            <div class="p-2">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans 'Row' %}</th>
+                            <th>{% trans 'Reason' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row_error in row_errors %}
+                        <tr>
+                            <td>{{ row_error.row }}</td>
+                            <td>{{ row_error.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock content %}

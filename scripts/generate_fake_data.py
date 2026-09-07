@@ -3,12 +3,12 @@ from factory.django import DjangoModelFactory
 from factory import SubFactory, LazyAttribute, Iterator
 from faker import Faker
 
-from course.models import Program, Course, CourseAllocation,Upload, UploadVideo,CourseOffer, SEMESTER
+from course.models import Program, Course, CourseAllocation,Upload, UploadVideo,CourseOffer
 from accounts.models import User, DepartmentHead
 from core.models import Session
 
 from .generate_fake_accounts_data import UserFactory, ProgramFactory
-from .generate_fake_core_data import SessionFactory
+from .generate_fake_core_data import SessionFactory, SemesterFactory
 
 fake = Faker()
 
@@ -48,7 +48,7 @@ class CourseFactory(DjangoModelFactory):
         program (Program): The associated program for the course.
         level (str): The generated level for the course.
         year (int): The generated year for the course.
-        semester (str): The generated semester for the course.
+        semester (Semester): The associated semester for the course.
         is_elective (bool): The flag indicating if the course is elective.
     """
 
@@ -63,7 +63,7 @@ class CourseFactory(DjangoModelFactory):
     program: Type[Program] = SubFactory(ProgramFactory)
     level: str = Iterator(["Beginner", "Intermediate", "Advanced"])
     year: int = LazyAttribute(lambda x: fake.random_int(min=1, max=4))
-    semester: str = Iterator([choice[0] for choice in SEMESTER])
+    semester = SubFactory(SemesterFactory)
     is_elective: bool = LazyAttribute(lambda x: fake.boolean())
 
 class CourseAllocationFactory(DjangoModelFactory):

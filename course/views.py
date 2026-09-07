@@ -10,7 +10,7 @@ from django.views.generic import ListView
 from django_filters.views import FilterView
 
 from accounts.models import User, Student
-from core.models import Session, Semester
+from core.models import Session, Semester, SiteConfiguration
 from result.models import TakenCourse
 from accounts.decorators import lecturer_required, student_required
 from .forms import (
@@ -20,9 +20,10 @@ from .forms import (
     EditCourseAllocationForm,
     UploadFormFile,
     UploadFormVideo,
+    UploadFormLink,
 )
 from .filters import ProgramFilter, CourseAllocationFilter
-from .models import Program, Course, CourseAllocation, Upload, UploadVideo
+from .models import Program, Course, CourseAllocation, Upload, UploadVideo, CourseLink
 
 
 @method_decorator([login_required, lecturer_required], name="dispatch")
@@ -130,6 +131,7 @@ def course_single(request, slug):
     course = Course.objects.get(slug=slug)
     files = Upload.objects.filter(course__slug=slug)
     videos = UploadVideo.objects.filter(course__slug=slug)
+    links = CourseLink.objects.filter(course__slug=slug)
 
     # lecturers = User.objects.filter(allocated_lecturer__pk=course.id)
     lecturers = CourseAllocation.objects.filter(courses__pk=course.id)
@@ -142,6 +144,7 @@ def course_single(request, slug):
             "course": course,
             "files": files,
             "videos": videos,
+            "links": links,
             "lecturers": lecturers,
             "media_url": settings.MEDIA_ROOT,
         },
@@ -354,6 +357,8 @@ def handle_file_edit(request, slug, file_id):
     )
 
 
+@login_required
+@lecturer_required
 def handle_file_delete(request, slug, file_id):
     file = Upload.objects.get(pk=file_id)
     # file_name = file.name
@@ -421,12 +426,81 @@ def handle_video_edit(request, slug, video_slug):
     )
 
 
+@login_required
+@lecturer_required
 def handle_video_delete(request, slug, video_slug):
     video = get_object_or_404(UploadVideo, slug=video_slug)
     # video = UploadVideo.objects.get(slug=video_slug)
     video.delete()
 
     messages.success(request, (video.title + " has been deleted."))
+    return redirect("course_detail", slug=slug)
+
+
+# ########################################################
+# YouTube link "upload" views
+# ########################################################
+@login_required
+@lecturer_required
+def handle_link_upload(request, slug):
+    course = get_object_or_404(Course, slug=slug)
+    if request.method == "POST":
+        form = UploadFormLink(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.course = course
+            obj.save()
+
+            messages.success(
+                request, (request.POST.get("title") + " has been added.")
+            )
+            return redirect("course_detail", slug=slug)
+    else:
+        form = UploadFormLink()
+    return render(
+        request,
+        "upload/upload_link_form.html",
+        {"title": "Add YouTube Link", "form": form, "course": course},
+    )
+
+
+@login_required
+def handle_link_single(request, slug, link_slug):
+    course = get_object_or_404(Course, slug=slug)
+    link = get_object_or_404(CourseLink, slug=link_slug)
+    return render(request, "upload/link_single.html", {"link": link})
+
+
+@login_required
+@lecturer_required
+def handle_link_edit(request, slug, link_slug):
+    course = get_object_or_404(Course, slug=slug)
+    instance = get_object_or_404(CourseLink, slug=link_slug)
+    if request.method == "POST":
+        form = UploadFormLink(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, (request.POST.get("title") + " has been updated.")
+            )
+            return redirect("course_detail", slug=slug)
+    else:
+        form = UploadFormLink(instance=instance)
+
+    return render(
+        request,
+        "upload/upload_link_form.html",
+        {"title": instance.title, "form": form, "course": course},
+    )
+
+
+@login_required
+@lecturer_required
+def handle_link_delete(request, slug, link_slug):
+    link = get_object_or_404(CourseLink, slug=link_slug)
+    link.delete()
+
+    messages.success(request, (link.title + " has been deleted."))
     return redirect("course_detail", slug=slug)
 
 
@@ -440,6 +514,12 @@ def handle_video_delete(request, slug, video_slug):
 @student_required
 def course_registration(request):
     if request.method == "POST":
+        if not SiteConfiguration.get_solo().course_registration_open:
+            messages.error(
+                request,
+                "Course registration is currently closed. Contact your administrator.",
+            )
+            return redirect("course_registration")
         student = Student.objects.get(student__pk=request.user.id)
         ids = ()
         data = request.POST.copy()
@@ -494,9 +574,9 @@ def course_registration(request):
         total_sec_semester_credit = 0
         total_registered_credit = 0
         for i in courses:
-            if i.semester == "First":
+            if i.semester and i.semester.semester == "First":
                 total_first_semester_credit += int(i.credit)
-            if i.semester == "Second":
+            if i.semester and i.semester.semester == "Second":
                 total_sec_semester_credit += int(i.credit)
         for i in registered_courses:
             total_registered_credit += int(i.credit)
@@ -511,6 +591,7 @@ def course_registration(request):
             "registered_courses": registered_courses,
             "total_registered_credit": total_registered_credit,
             "student": student,
+            "registration_open": SiteConfiguration.get_solo().course_registration_open,
         }
         return render(request, "course/course_registration.html", context)
 
@@ -519,6 +600,12 @@ def course_registration(request):
 @student_required
 def course_drop(request):
     if request.method == "POST":
+        if not SiteConfiguration.get_solo().course_registration_open:
+            messages.error(
+                request,
+                "Course registration is currently closed. Contact your administrator.",
+            )
+            return redirect("course_registration")
         student = Student.objects.get(student__pk=request.user.id)
         ids = ()
         data = request.POST.copy()

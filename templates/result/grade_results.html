@@ -43,7 +43,7 @@
       </tr>
     </thead>
     {% for course in courses %}
-    {% if course.course.semester == "First" %}
+    {% if course.course.semester.semester == "First" %}
     <tbody>
       <tr class="{% if forloop.counter|divisibleby:2 %}bg-gray{% endif %}">
         <th>{{ forloop.counter }}</th>
@@ -108,7 +108,7 @@
       </tr>
     </thead>
     {% for course in courses %}
-    {% if course.course.semester == "Second" %}
+    {% if course.course.semester.semester == "Second" %}
     <tbody>
       <tr>
         <th>{{ forloop.counter }}</th>

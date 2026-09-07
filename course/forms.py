@@ -1,6 +1,7 @@
 from django import forms
 from accounts.models import User
-from .models import Program, Course, CourseAllocation, Upload, UploadVideo
+from core.models import Semester
+from .models import Program, Course, CourseAllocation, Upload, UploadVideo, CourseLink
 
 
 class ProgramForm(forms.ModelForm):
@@ -14,7 +15,22 @@ class ProgramForm(forms.ModelForm):
         self.fields["summary"].widget.attrs.update({"class": "form-control"})
 
 
+class SemesterModelChoiceField(forms.ModelChoiceField):
+    """Disambiguates same-named semesters across sessions, e.g. "First"
+    appears once per session — show "2025/2026 - First", not just "First"."""
+
+    def label_from_instance(self, obj):
+        return f"{obj.session} - {obj.get_semester_display()}" if obj.session_id else obj.get_semester_display()
+
+
 class CourseAddForm(forms.ModelForm):
+    semester = SemesterModelChoiceField(
+        queryset=Semester.objects.select_related("session").order_by(
+            "-session__id", "semester"
+        ),
+        required=False,
+    )
+
     class Meta:
         model = Course
         fields = "__all__"
@@ -106,3 +122,26 @@ class UploadFormVideo(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["title"].widget.attrs.update({"class": "form-control"})
         self.fields["video"].widget.attrs.update({"class": "form-control"})
+
+
+# Share a YouTube link as material for a specific course
+class UploadFormLink(forms.ModelForm):
+    class Meta:
+        model = CourseLink
+        fields = (
+            "title",
+            "url",
+            "summary",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["title"].widget.attrs.update({"class": "form-control"})
+        self.fields["url"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "placeholder": "https://www.youtube.com/watch?v=...",
+            }
+        )
+        self.fields["summary"].widget.attrs.update({"class": "form-control"})
+        self.fields["summary"].required = False

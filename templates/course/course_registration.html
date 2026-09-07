@@ -28,6 +28,12 @@
 
 {% else %}
 
+{% if not registration_open %}
+<div class="alert alert-warning">
+    <h5 class="text-center mb-0">{% trans 'Course registration is currently closed. Contact your administrator to add or drop courses.' %}</h5>
+</div>
+{% else %}
+
 {% if not all_courses_are_registered %}
 
 <form action="{% url 'course_registration' %}" method="POST">{% csrf_token %}
@@ -55,7 +61,7 @@
                         </thead>
                         <tbody>
                             {% for course in courses %}
-                            {% if course.semester == "First" %}
+                            {% if course.semester.semester == "First" %}
                             <tr>
                                 <th scope="row">
                                     <input name="{{ course.pk }}" value="{{ course.courseUnit }}" type="checkbox">
@@ -118,7 +124,7 @@
                         </thead>
                         <tbody>
                             {% for course in courses %}
-                            {% if course.semester == "Second" %}
+                            {% if course.semester.semester == "Second" %}
                             <tr>
                                 <th scope="row">
                                     <input name="{{ course.pk }}" value="{{ course.courseUnit }}" type="checkbox">
@@ -270,6 +276,7 @@
     </div>
 </div>
 
+{% endif %}
 {% endif %}
 {% endif %}
 {% endif %}
