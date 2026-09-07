@@ -11,12 +11,6 @@
     </ol>
 </nav>
 
-{% if request.user.is_superuser %}
-<div class="manage-wrap">
-    <a class="btn btn-primary" href="{% url 'add_program' %}"><i class="fas fa-plus"></i>{% trans 'Add Program' %}</a>
-</div>
-{% endif %}
-
 <div class="title-1"><i class="fas fa-book-open"></i>{% trans 'Program List' %}</div>
 <br><br>
 
@@ -85,4 +79,10 @@
         </table>
     </div>
 </div>
+
+{% if request.user.is_superuser %}
+<div class="manage-wrap">
+    <a class="btn btn-primary" href="{% url 'add_program' %}"><i class="fas fa-plus"></i>{% trans 'Add Program' %}</a>
+</div>
+{% endif %}
 {% endblock content %}

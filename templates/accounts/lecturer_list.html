@@ -11,14 +11,6 @@
     </ol>
 </nav>
 
-{% if request.user.is_superuser %}
-<div class="manage-wrap">
-    <a class="btn btn-primary" href="{% url 'add_lecturer' %}"><i class="fas fa-plus"></i>{% trans 'Add Facilitator' %}</a>
-    <a class="btn btn-primary" href="{% url 'lecturer_bulk_upload' %}"><i class="fas fa-file-excel"></i> {% trans 'Bulk Upload' %}</a>
-    <a class="btn btn-primary" target="_blank" href="{% url 'lecturer_list_pdf' %}"><i class="fas fa-download"></i> {% trans 'Download pdf' %}</a><!--new-->
-</div>
-{% endif %}
-
 <p class="title-1"><i class="fas fa-chalkboard-teacher"></i>{% trans 'Facilitators' %}</p>
 
 {% include 'snippets/messages.html' %}
@@ -86,5 +78,13 @@
         </tbody>
     </table>
 </div>
+
+{% if request.user.is_superuser %}
+<div class="manage-wrap">
+    <a class="btn btn-primary" href="{% url 'add_lecturer' %}"><i class="fas fa-plus"></i>{% trans 'Add Facilitator' %}</a>
+    <a class="btn btn-primary" href="{% url 'lecturer_bulk_upload' %}"><i class="fas fa-file-excel"></i> {% trans 'Bulk Upload' %}</a>
+    <a class="btn btn-primary" target="_blank" href="{% url 'lecturer_list_pdf' %}"><i class="fas fa-download"></i> {% trans 'Download pdf' %}</a><!--new-->
+</div>
+{% endif %}
 {% endblock content %}
 
