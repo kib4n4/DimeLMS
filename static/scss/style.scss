@@ -230,6 +230,72 @@
   --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.35), 0 16px 36px rgba(0, 0, 0, 0.5);
 }
 
+/* Bootstrap's .bg-white / .bg-light utilities hardcode #fff / #f8f9fa and
+   stay pinned to that even in dark mode (unlike --bs-body-bg, which we
+   bridged to the token system above) — override them so cards/panels using
+   these utility classes still track the theme instead of showing a fixed
+   light box against dark surfaces. */
+.bg-white {
+  background-color: var(--surface) !important;
+}
+.bg-light {
+  background-color: var(--surface-sunken) !important;
+}
+
+/* Semantic pass/fail indicators used across result & quiz templates. These
+   classes were referenced with no definition anywhere in the codebase, so
+   grades/PASS/FAIL cells rendered with no color at all. Wired to Bootstrap's
+   theme-aware emphasis tokens (unlocked by mirroring data-bs-theme, see
+   base.html) so they read correctly in both modes. */
+.success {
+  color: var(--bs-success-text-emphasis);
+}
+.danger {
+  color: var(--bs-danger-text-emphasis);
+}
+
+/* Accent text used across search results, sidebar role badge and media
+   summaries — referenced with no definition anywhere, so it rendered as
+   plain inherited text color. Mapped to the brand accent used everywhere
+   else in the redesign instead of a stray literal orange. */
+.text-orange {
+  color: var(--brand-600);
+}
+
+/* Zebra striping for the grade-results table (referenced by grade_results.html) */
+.bg-gray {
+  background: var(--surface-hover) !important;
+}
+
+/* Single-attempt quiz notice (quiz_list.html) — was a hardcoded bright
+   yellow defined in an inline <style> tag, fixed regardless of theme. */
+.bg-light-warning {
+  background-color: var(--bs-warning-bg-subtle) !important;
+  color: var(--bs-warning-text-emphasis);
+}
+
+/* Callout box for explanation/help text (question.html, result.html) —
+   replaces a hardcoded pale-yellow inline style that stayed pale yellow
+   against a dark canvas. */
+.explanation-box {
+  background: var(--surface-sunken);
+  border-left: 3px solid var(--brand-500);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+/* Result-table summary/highlight rows (grade_results.html) — replace
+   hardcoded #f3f2f2 / #fd7e14 inline styles that didn't track the theme. */
+.result-summary-row {
+  background: var(--surface-sunken);
+}
+.result-highlight-row,
+.result-highlight-row > th,
+.result-highlight-row > td {
+  background: var(--brand-500);
+  color: var(--text-on-brand);
+}
+
 /* Respect reduced-motion preference globally */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -711,7 +777,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: var(--space-16);
   }
   .top-side {
-    background: var(--surface-sunken);
+    background: var(--surface);
     border-bottom: 1px solid var(--border-subtle);
     margin-bottom: var(--space-2);
     padding: var(--space-2) var(--space-8);
@@ -1477,6 +1543,11 @@ a {
   justify-content: center;
   width: 34px;
   height: 34px;
+  /* A translucent darkening tint rather than an opaque token color — it
+     needs to work as a backdrop for icons sitting on any surface (colored
+     buttons, dark card headers, plain content), so it stays relative to
+     whatever's behind it instead of replacing it. An opaque surface color
+     here hides white icon glyphs on colored/dark parents. */
   background-color: rgba(0, 0, 0, 0.093);
   border-radius: 50%;
   &.unstyled {

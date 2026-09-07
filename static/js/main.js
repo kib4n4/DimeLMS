@@ -111,6 +111,7 @@ $(document).ready(function () {
   toggle.addEventListener("click", function () {
     var next = currentTheme() === "dark" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", next);
+    document.documentElement.setAttribute("data-bs-theme", next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch (e) {}

@@ -69,7 +69,7 @@
 
     {% for result in results %}
     {% if result.semester == "First" %}
-    <tr style="background: #f3f2f2;">
+    <tr class="result-summary-row">
       <th></th>
       <th></th>
       <th></th>
@@ -78,7 +78,7 @@
       <th></th>
       <th>{% trans 'Total first semester credit:' %} {{ total_first_semester_credit }}</th>
     </tr>
-    <tr class="bg-orange text-white">
+    <tr class="result-highlight-row">
       <th></th>
       <th></th>
       <th></th>
@@ -134,7 +134,7 @@
     
     {% for result in results %}
     {% if result.semester == "Second" %}
-    <tr style="background: #f3f2f2;">
+    <tr class="result-summary-row">
       <th></th>
       <th>{% trans 'Total second semester credit:' %} {{ total_sec_semester_credit }}</th>
       <th></th>
@@ -143,7 +143,7 @@
       <th></th>
       <th>{% trans 'Total Credit:' %} {{ total_first_and_second_semester_credit }}</th>
     </tr>
-    <tr style="background: #f3f2f2;">
+    <tr class="result-summary-row">
       <th></th>
       <th></th>
       <th></th>
@@ -152,7 +152,7 @@
       <th></th>
       <th>{% trans 'Second Semester GPA:' %} {{ result.gpa }}</th>
     </tr>
-    <tr style="background: #fd7e14; color: #fff;">
+    <tr class="result-highlight-row">
       <th></th>
       <th></th>
       <th></th>
