@@ -1772,7 +1772,19 @@ a.card:hover {
   min-height: 100vh;
   width: 100%;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.auth-shell {
+  width: min(100%, 1040px);
+  min-height: 620px;
+  display: flex;
   background: var(--surface);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
 }
 
 .auth-panel {
@@ -1821,7 +1833,7 @@ a.card:hover {
   flex-direction: column;
   justify-content: flex-end;
   padding: 3.5rem;
-  background: linear-gradient(155deg, #012431 0%, #01536a 42%, #00b6e1 100%);
+  background: linear-gradient(155deg, #00b6e1 0%, #01536a 42%, #012431 100%);
 }
 
 .auth-visual-glow {
@@ -1936,6 +1948,7 @@ a.card:hover {
   max-width: 380px;
 
   h2 {
+    color: #fff;
     font-size: 1.6rem;
     font-weight: 700;
     margin-bottom: 0.6rem;
@@ -1950,6 +1963,14 @@ a.card:hover {
 }
 
 @media (max-width: 991px) {
+  .auth-page {
+    padding: 0;
+  }
+  .auth-shell {
+    min-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
   .auth-visual {
     display: none;
   }
