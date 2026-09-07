@@ -16,6 +16,12 @@
                 if (stored === "dark" || stored === "light") {
                     document.documentElement.setAttribute("data-theme", stored);
                 }
+                // Mirror onto Bootstrap's own dark-mode attribute so its built-in
+                // dark palette (alerts, badges, form validation, borders) tracks
+                // the same toggle instead of staying pinned to light colors.
+                var isDark = stored === "dark" || (stored !== "light" &&
+                    window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
             } catch (e) {}
         })();
     </script>
