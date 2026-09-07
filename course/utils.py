@@ -1,9 +1,31 @@
 import datetime
 import os
 import random
+import re
 import string
 
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify
+
+YOUTUBE_URL_PATTERN = re.compile(
+    r"(?:youtube\.com/(?:watch\?v=|embed/|v/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})"
+)
+
+
+def extract_youtube_id(url):
+    """Pull the 11-char video id out of any common YouTube URL shape
+    (watch?v=, youtu.be/, embed/, shorts/), or None if it doesn't match."""
+    if not url:
+        return None
+    match = YOUTUBE_URL_PATTERN.search(url)
+    return match.group(1) if match else None
+
+
+def validate_youtube_url(value):
+    if not extract_youtube_id(value):
+        raise ValidationError(
+            "Enter a valid YouTube link, e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+        )
 
 
 def random_string_generator(size=10, chars=string.ascii_lowercase + string.digits):

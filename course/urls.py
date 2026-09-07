@@ -66,6 +66,27 @@ urlpatterns = [
         handle_video_delete,
         name="upload_video_delete",
     ),
+    # YouTube link urls
+    path(
+        "course/<slug>/links/add/",
+        handle_link_upload,
+        name="upload_link",
+    ),
+    path(
+        "course/<slug>/links/<link_slug>/detail/",
+        handle_link_single,
+        name="link_single",
+    ),
+    path(
+        "course/<slug>/links/<link_slug>/edit/",
+        handle_link_edit,
+        name="upload_link_edit",
+    ),
+    path(
+        "course/<slug>/links/<link_slug>/delete/",
+        handle_link_delete,
+        name="upload_link_delete",
+    ),
     # course registration
     path("course/registration/", course_registration, name="course_registration"),
     path("course/drop/", course_drop, name="course_drop"),

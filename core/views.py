@@ -5,7 +5,24 @@ from django.contrib.auth.decorators import login_required
 from accounts.decorators import admin_required, lecturer_required
 from accounts.models import User, Student
 from .forms import SessionForm, SemesterForm, NewsAndEventsForm
-from .models import NewsAndEvents, ActivityLog, Session, Semester
+from .models import NewsAndEvents, ActivityLog, Session, Semester, SiteConfiguration
+
+
+# ########################################################
+# Site configuration
+# ########################################################
+@login_required
+@admin_required
+def toggle_course_registration(request):
+    if request.method == "POST":
+        config = SiteConfiguration.get_solo()
+        config.course_registration_open = not config.course_registration_open
+        config.save()
+        if config.course_registration_open:
+            messages.success(request, "Course registration is now open to students.")
+        else:
+            messages.success(request, "Course registration is now closed to students.")
+    return redirect("admin_panel")
 
 
 # ########################################################

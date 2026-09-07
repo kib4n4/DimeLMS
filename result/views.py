@@ -230,9 +230,9 @@ def grade_result(request):
     total_first_semester_credit = 0
     total_sec_semester_credit = 0
     for i in courses:
-        if i.course.semester == "First":
+        if i.course.semester and i.course.semester.semester == "First":
             total_first_semester_credit += int(i.course.credit)
-        if i.course.semester == "Second":
+        if i.course.semester and i.course.semester.semester == "Second":
             total_sec_semester_credit += int(i.course.credit)
 
     previousCGPA = 0
@@ -596,7 +596,7 @@ def course_registration_form(request):
 
     first_semester_unit = 0
     for course in courses:
-        if course.course.semester == FIRST:
+        if course.course.semester and course.course.semester.semester == FIRST:
             first_semester_unit += int(course.course.credit)
             data = [
                 (
@@ -686,7 +686,7 @@ def course_registration_form(request):
 
     second_semester_unit = 0
     for course in courses:
-        if course.course.semester == SECOND:
+        if course.course.semester and course.course.semester.semester == SECOND:
             second_semester_unit += int(course.course.credit)
             data = [
                 (

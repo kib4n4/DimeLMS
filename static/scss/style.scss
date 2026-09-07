@@ -827,6 +827,105 @@ h1, h2, h3, h4, h5, h6 {
 .nav-section-label:first-child {
   margin-top: var(--space-2);
 }
+
+/*======================================
+  //--//-->   Admin panel quick links
+  (same type scale / colors as #side-nav, laid out as cards)
+  ======================================*/
+.admin-section-label {
+  margin: 0 0 var(--space-3);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.admin-panel-section + .admin-panel-section {
+  margin-top: var(--space-8);
+}
+
+.admin-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.admin-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 44px;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  color: var(--text-secondary);
+  transition: border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+a.admin-card:hover {
+  border-color: var(--brand-500);
+  background: var(--surface-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.admin-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: var(--text-lg);
+}
+
+.admin-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-card-title {
+  display: block;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+a.admin-card:hover .admin-card-title {
+  color: var(--brand-700);
+}
+
+.admin-card-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.admin-card-chevron {
+  flex: none;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  transition: transform var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+a.admin-card:hover .admin-card-chevron {
+  transform: translateX(3px);
+  color: var(--brand-500);
+}
+
+.admin-card-switch {
+  flex: none;
+}
 @media screen and (max-width: 1150px) {
   #side-nav .top-side {
     padding-top: 3rem;

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ link.title }} | {% trans 'Learning management system' %}{% endblock title %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'programs' %}">{% trans 'Programs' %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'program_detail' link.course.program.id %}">{{ link.course.program }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'course_detail' link.course.slug %}">{{ link.course }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ link.title }}</li>
+    </ol>
+</nav>
+
+<p class="title-1">{{ link.title }}</p>
+<br><br>
+
+<style>
+    .link-embed {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 */
+        -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+        box-shadow: 0px 2px 5px 0px rgba(0,0,0,0.16), 0px 2px 10px 0px rgba(0,0,0,0.12);
+    }
+    .link-embed iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+</style>
+
+<div class="col-md-10 mx-auto d-block">
+    {% if link.embed_url %}
+    <div class="link-embed">
+        <iframe src="{{ link.embed_url }}" title="{{ link.title }}" allowfullscreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    </div>
+    {% else %}
+    <p class="text-danger">{% trans "This link couldn't be embedded." %}
+        <a href="{{ link.url }}" target="_blank" rel="noopener">{% trans 'Open it on YouTube instead.' %}</a>
+    </p>
+    {% endif %}
+    <p class="mt-2"><i class="fas fa-calendar"></i> {{ link.timestamp|timesince }} {% trans 'ago' %} —
+        <a href="{{ link.url }}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i> {% trans 'Watch on YouTube' %}</a>
+    </p>
+    {% if link.summary %}
+    <p class="text-orange text-center">{{ link.summary }}</p>
+    {% else %}
+    {% trans 'No description set.' %}
+    {% endif %}
+</div>
+
+{% endblock content %}

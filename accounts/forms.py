@@ -172,6 +172,25 @@ class StaffAddForm(UserCreationForm):
         return user
 
 
+class LecturerBulkUploadForm(forms.Form):
+    excel_file = forms.FileField(
+        label="Excel file",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "class": "form-control",
+                "accept": ".xlsx",
+            }
+        ),
+        help_text="Required columns: First Name, Last Name, Email, Phone, Address.",
+    )
+
+    def clean_excel_file(self):
+        excel_file = self.cleaned_data["excel_file"]
+        if not excel_file.name.lower().endswith(".xlsx"):
+            raise ValidationError("Please upload a valid Excel (.xlsx) file.")
+        return excel_file
+
+
 class StudentAddForm(UserCreationForm):
     username = forms.CharField(
         max_length=30,

@@ -101,7 +101,13 @@ class Course(models.Model):
     program = models.ForeignKey(Program, on_delete=models.CASCADE)
     level = models.CharField(max_length=25, choices=LEVEL, null=True)
     year = models.IntegerField(choices=YEARS, default=0)
-    semester = models.CharField(choices=SEMESTER, max_length=200)
+    semester = models.ForeignKey(
+        "core.Semester",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
+    )
     is_elective = models.BooleanField(default=False, blank=True, null=True)
 
     objects = CourseManager()
@@ -114,14 +120,7 @@ class Course(models.Model):
 
     @property
     def is_current_semester(self):
-        from core.models import Semester
-
-        current_semester = Semester.objects.get(is_current_semester=True)
-
-        if self.semester == current_semester.semester:
-            return True
-        else:
-            return False
+        return bool(self.semester_id and self.semester.is_current_semester)
 
 
 def course_pre_save_receiver(sender, instance, *args, **kwargs):
@@ -291,6 +290,79 @@ def log_delete(sender, instance, **kwargs):
     ActivityLog.objects.create(
         message=_(
             f"The video '{instance.title}' of the course '{instance.course}' has been deleted."
+        )
+    )
+
+
+class CourseLink(models.Model):
+    """A YouTube video shared as course material, alongside file
+    Uploads and self-hosted UploadVideos — no file storage of our own,
+    just a validated link plus the embeddable player."""
+
+    title = models.CharField(max_length=100)
+    slug = models.SlugField(blank=True, unique=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    url = models.URLField(
+        help_text=_(
+            "A YouTube link, e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+        ),
+        validators=[validate_youtube_url],
+    )
+    summary = models.TextField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now=False, auto_now_add=True, null=True)
+
+    def __str__(self):
+        return str(self.title)
+
+    @property
+    def youtube_id(self):
+        return extract_youtube_id(self.url)
+
+    @property
+    def embed_url(self):
+        video_id = self.youtube_id
+        return f"https://www.youtube-nocookie.com/embed/{video_id}" if video_id else None
+
+    @property
+    def thumbnail_url(self):
+        video_id = self.youtube_id
+        return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg" if video_id else None
+
+    def get_absolute_url(self):
+        return reverse(
+            "link_single", kwargs={"slug": self.course.slug, "link_slug": self.slug}
+        )
+
+
+def link_pre_save_receiver(sender, instance, *args, **kwargs):
+    if not instance.slug:
+        instance.slug = unique_slug_generator(instance)
+
+
+pre_save.connect(link_pre_save_receiver, sender=CourseLink)
+
+
+@receiver(post_save, sender=CourseLink)
+def log_save(sender, instance, created, **kwargs):
+    if created:
+        ActivityLog.objects.create(
+            message=_(
+                f"The link '{instance.title}' has been added to the course {instance.course}."
+            )
+        )
+    else:
+        ActivityLog.objects.create(
+            message=_(
+                f"The link '{instance.title}' of the course '{instance.course}' has been updated."
+            )
+        )
+
+
+@receiver(post_delete, sender=CourseLink)
+def log_delete(sender, instance, **kwargs):
+    ActivityLog.objects.create(
+        message=_(
+            f"The link '{instance.title}' of the course '{instance.course}' has been deleted."
         )
     )
 

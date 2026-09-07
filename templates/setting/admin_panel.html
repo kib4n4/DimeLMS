@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
+{% block title %}{{ title }} | {% trans 'DIME LMS' %}{% endblock title %}
 {% load crispy_forms_tags %}
 {% load static %}
 
@@ -11,7 +11,7 @@
         <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
         <li class="breadcrumb-item active" aria-current="page">{% trans 'Admin Panel' %}</li>
     </ol>
-</nav>  
+</nav>
 
 <div class="title-1"><i class="fas fa-user-tie"></i>{% trans 'Admin Panel' %}</div>
 <br>
@@ -30,56 +30,104 @@
     {% endfor %}
 {% endif %}
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="border-bottom">
-                {% trans 'Manage' %}<a class="link" href="{% url 'lecturer_list' %}">{% trans 'Lecturers' %} &raquo;</a>
-                <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) lecturers</p>
-            </div>
+<div class="admin-panel-section">
+    <p class="admin-section-label">{% trans 'People' %}</p>
+    <div class="admin-panel-grid">
+        <a href="{% url 'lecturer_list' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-chalkboard-teacher"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Facilitators' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove facilitator accounts.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
 
-            <div class="border-bottom mt-3">
-                {% trans 'Manage' %}<a class="link" href="{% url 'student_list' %}">{% trans 'Students' %} &raquo;</a>
-            <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) {% trans 'students' %}</p>
-            </div>
+        <a href="{% url 'student_list' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-user-graduate"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Students' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove student accounts.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+    </div>
+</div>
 
-            <div class="border-bottom mt-3">
-                {% trans 'Manage' %}<a class="link" href="{% url 'session_list' %}">{% trans 'Session' %} &raquo;</a>
-            <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) {% trans 'sessions' %}</p>
-            </div>
+<div class="admin-panel-section">
+    <p class="admin-section-label">{% trans 'Academic structure' %}</p>
+    <div class="admin-panel-grid">
+        <a href="{% url 'session_list' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-calendar-week"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Sessions' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove academic sessions.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
 
-            <div class="mt-3">
-                {% trans 'Manage' %}<a class="link" href="{% url 'semester_list' %}"> {% trans 'Semester' %} &raquo;</a>
-            <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) {% trans 'semesters' %}</p>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="border-bottom">
-                {% trans 'Course Add' %} &amp; {% trans 'Drop' %}
-                <label class="switch switch-text switch-success switch-pill" style="float: right;">
-                <input type="checkbox" class="switch-input" checked="true">
-                <span data-on="On" data-off="Off" class="switch-label"></span>
-                <span class="switch-handle"></span>
+        <a href="{% url 'semester_list' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-calendar-alt"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Semesters' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove semesters.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+
+        <a href="{% url 'programs' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-book-open"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Programs & Courses' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove programs and courses.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+
+        <a href="{% url 'course_allocation_view' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-tasks"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Course Allocations' %}</span>
+                <span class="admin-card-desc">{% trans 'Assign courses to facilitators.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+    </div>
+</div>
+
+<div class="admin-panel-section">
+    <p class="admin-section-label">{% trans 'Content & settings' %}</p>
+    <div class="admin-panel-grid">
+        <a href="{% url 'home' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-newspaper"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'News & Events' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove news and events.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+
+        <div class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-plus"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Course Add' %} &amp; {% trans 'Drop' %}</span>
+                <span class="admin-card-desc">
+                    {% if site_config.course_registration_open %}
+                        {% trans 'Students can currently add or drop courses themselves.' %}
+                    {% else %}
+                        {% trans 'Course registration is currently closed to students.' %}
+                    {% endif %}
+                </span>
+            </span>
+            <form action="{% url 'toggle_course_registration' %}" method="POST" id="registration-toggle-form">
+                {% csrf_token %}
+                <label class="switch switch-text switch-success switch-pill admin-card-switch">
+                    <input type="checkbox" class="switch-input" id="registration-toggle-input"
+                        {% if site_config.course_registration_open %}checked{% endif %}
+                        onchange="document.getElementById('registration-toggle-form').submit()">
+                    <span data-on="On" data-off="Off" class="switch-label"></span>
+                    <span class="switch-handle"></span>
                 </label>
-                <p class="text-muted">{% trans 'Switch' %} 
-                    <i class="info-text py-0 px-2 bg-success text-light">ON</i> or <i class="info-text py-0 px-2 bg-danger text-light">OFF</i>
-                </p>
-            </div>
-
-            <div class="border-bottom mt-3">
-                {% trans 'Manage' %}<a class="link" href="{% url 'programs' %}"> {% trans 'Programs' %} &amp; {% trans 'Courses' %} &raquo;</a>
-            <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) {% trans 'programs' %}</p>
-            </div>
-
-            <div class="border-bottom mt-3">
-                {% trans 'Manage' %}<a class="link" href="{% url 'course_allocation_view' %}"> {% trans 'Course Allocations' %} &raquo;</a>
-            <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) {% trans 'course allocations' %}</p>
-            </div>
-
-            <div class="mt-3">
-                {% trans 'Manage' %}<a class="link" href="{% url 'home' %}"> {% trans 'News' %} &amp; {% trans 'Events' %} &raquo;</a>
-            <p class="text-muted">CRUD (Create, Retrieve, Update &amp; Delete) {% trans 'News' %} &amp; {% trans 'Events' %}</p>
-            </div>
+            </form>
         </div>
     </div>
 </div>

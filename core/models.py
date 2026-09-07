@@ -94,3 +94,25 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"[{self.created_at}]{self.message}"
+
+
+class SiteConfiguration(models.Model):
+    """A single row of site-wide toggles, managed from the Admin Panel.
+    Use SiteConfiguration.get_solo() rather than querying directly."""
+
+    course_registration_open = models.BooleanField(
+        default=True,
+        help_text=_("When off, students can't add or drop courses themselves."),
+    )
+
+    class Meta:
+        verbose_name = "Site configuration"
+        verbose_name_plural = "Site configuration"
+
+    def __str__(self):
+        return "Site configuration"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj

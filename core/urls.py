@@ -14,12 +14,18 @@ from .views import (
     semester_update_view,
     semester_delete_view,
     dashboard_view,
+    toggle_course_registration,
 )
 
 
 urlpatterns = [
     # Accounts url
     path("", home_view, name="home"),
+    path(
+        "settings/toggle-course-registration/",
+        toggle_course_registration,
+        name="toggle_course_registration",
+    ),
     path("add_item/", post_add, name="add_item"),
     path("item/<int:pk>/edit/", edit_post, name="edit_post"),
     path("item/<int:pk>/delete/", delete_post, name="delete_post"),

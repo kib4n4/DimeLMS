@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.contrib.auth.forms import PasswordChangeForm
 from django_filters.views import FilterView
-from core.models import Session, Semester
+from core.models import Session, Semester, SiteConfiguration
 from course.models import Course
 from result.models import TakenCourse
 from .decorators import admin_required
@@ -20,9 +20,11 @@ from .forms import (
     ParentAddForm,
     ProgramUpdateForm,
     EmailAuthenticationForm,
+    LecturerBulkUploadForm,
 )
 from .models import User, Student, Parent
 from .filters import LecturerFilter, StudentFilter
+from .utils import parse_lecturer_bulk_upload, build_lecturer_bulk_upload_template
 
 # to generate pdf from template we need the following
 from django.http import HttpResponse
@@ -162,7 +164,7 @@ def profile_single(request, id):
             context = {
                 "title": user.get_full_name,
                 "user": user,
-                "user_type": "Lecturer",
+                "user_type": "Facilitator",
                 "courses": courses,
                 "current_session": current_session,
                 "current_semester": current_semester,
@@ -199,7 +201,7 @@ def profile_single(request, id):
             context = {
                 "title": user.get_full_name,
                 "user": user,
-                "user_type": "Lecturer",
+                "user_type": "Facilitator",
                 "courses": courses,
                 "current_session": current_session,
                 "current_semester": current_semester,
@@ -235,7 +237,12 @@ def profile_single(request, id):
 @admin_required
 def admin_panel(request):
     return render(
-        request, "setting/admin_panel.html", {"title": request.user.get_full_name}
+        request,
+        "setting/admin_panel.html",
+        {
+            "title": request.user.get_full_name,
+            "site_config": SiteConfiguration.get_solo(),
+        },
     )
 
 
@@ -306,7 +313,7 @@ def staff_add_view(request):
             form.save()
             messages.success(
                 request,
-                "Account for lecturer "
+                "Account for facilitator "
                 + first_name
                 + " "
                 + last_name
@@ -319,11 +326,61 @@ def staff_add_view(request):
         form = StaffAddForm()
 
     context = {
-        "title": "Lecturer Add",
+        "title": "Facilitator Add",
         "form": form,
     }
 
     return render(request, "accounts/add_staff.html", context)
+
+
+@login_required
+@admin_required
+def lecturer_bulk_upload_view(request):
+    row_errors = []
+    created_users = []
+
+    if request.method == "POST":
+        form = LecturerBulkUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            created_users, row_errors = parse_lecturer_bulk_upload(
+                form.cleaned_data["excel_file"]
+            )
+            if created_users:
+                messages.success(
+                    request,
+                    f"{len(created_users)} facilitator account(s) created. "
+                    "Each will receive an email with their login credentials.",
+                )
+            if row_errors:
+                messages.error(
+                    request,
+                    f"{len(row_errors)} row(s) could not be imported — see details below.",
+                )
+            form = LecturerBulkUploadForm()
+    else:
+        form = LecturerBulkUploadForm()
+
+    context = {
+        "title": "Bulk Upload Facilitators",
+        "form": form,
+        "row_errors": row_errors,
+        "created_count": len(created_users),
+    }
+    return render(request, "accounts/lecturer_bulk_upload.html", context)
+
+
+@login_required
+@admin_required
+def lecturer_bulk_upload_template(request):
+    wb = build_lecturer_bulk_upload_template()
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        'attachment; filename="facilitators_bulk_upload_template.xlsx"'
+    )
+    wb.save(response)
+    return response
 
 
 @login_required
@@ -336,7 +393,7 @@ def edit_staff(request, pk):
         if form.is_valid():
             form.save()
 
-            messages.success(request, "Lecturer " + full_name + " has been updated.")
+            messages.success(request, "Facilitator " + full_name + " has been updated.")
             return redirect("lecturer_list")
         else:
             messages.error(request, "Please correct the error below.")
@@ -346,7 +403,7 @@ def edit_staff(request, pk):
         request,
         "accounts/edit_lecturer.html",
         {
-            "title": "Edit Lecturer",
+            "title": "Edit Facilitator",
             "form": form,
         },
     )
@@ -361,7 +418,7 @@ class LecturerFilterView(FilterView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = "Lecturers"
+        context["title"] = "Facilitators"
         return context
 
 
@@ -399,7 +456,7 @@ def delete_staff(request, pk):
     lecturer = get_object_or_404(User, pk=pk)
     full_name = lecturer.get_full_name
     lecturer.delete()
-    messages.success(request, "Lecturer " + full_name + " has been deleted.")
+    messages.success(request, "Facilitator " + full_name + " has been deleted.")
     return redirect("lecturer_list")
 
 
