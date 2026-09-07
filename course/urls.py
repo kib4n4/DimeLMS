@@ -87,6 +87,22 @@ urlpatterns = [
         handle_link_delete,
         name="upload_link_delete",
     ),
+    # Module & progress tracking urls
+    path("course/<slug>/modules/", module_list, name="module_list"),
+    path("course/<slug>/modules/add/", module_add, name="module_add"),
+    path("course/<slug>/modules/<int:pk>/edit/", module_edit, name="module_edit"),
+    path("course/<slug>/modules/<int:pk>/delete/", module_delete, name="module_delete"),
+    path("course/<slug>/modules/<int:pk>/", module_detail, name="module_detail"),
+    path(
+        "modules/<int:pk>/progress/",
+        record_module_progress,
+        name="record_module_progress",
+    ),
+    path(
+        "course/<slug>/tracker/",
+        CourseTrackerRosterView.as_view(),
+        name="course_tracker_roster",
+    ),
     # course registration
     path("course/registration/", course_registration, name="course_registration"),
     path("course/drop/", course_drop, name="course_drop"),

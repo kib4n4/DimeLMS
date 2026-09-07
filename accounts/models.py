@@ -72,6 +72,14 @@ class User(AbstractUser):
     is_lecturer = models.BooleanField(default=False)
     is_parent = models.BooleanField(default=False)
     is_dep_head = models.BooleanField(default=False)
+    is_org_admin = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Organization admin: read/write on facilitators, students, "
+            "programs & courses, sessions, semesters, exams and course "
+            "allocations — everything except superuser-only site settings."
+        ),
+    )
     gender = models.CharField(max_length=1, choices=GENDERS, blank=True, null=True)
     phone = models.CharField(max_length=60, blank=True, null=True)
     address = models.CharField(max_length=60, blank=True, null=True)
@@ -101,6 +109,8 @@ class User(AbstractUser):
     def get_user_role(self):
         if self.is_superuser:
             role = _("Admin")
+        elif self.is_org_admin:
+            role = _("Org Admin")
         elif self.is_student:
             role = _("Student")
         elif self.is_lecturer:

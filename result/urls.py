@@ -6,12 +6,24 @@ from .views import (
     assessment_result,
     course_registration_form,
     result_sheet_pdf_view,
+    score_bulk_upload_view,
+    score_bulk_upload_template,
 )
 
 
 urlpatterns = [
     path("manage-score/", add_score, name="add_score"),
     path("manage-score/<int:id>/", add_score_for, name="add_score_for"),
+    path(
+        "manage-score/<int:id>/bulk-upload/",
+        score_bulk_upload_view,
+        name="score_bulk_upload",
+    ),
+    path(
+        "manage-score/<int:id>/bulk-upload/template/",
+        score_bulk_upload_template,
+        name="score_bulk_upload_template",
+    ),
     path("grade/", grade_result, name="grade_results"),
     path("assessment/", assessment_result, name="ass_results"),
     path("result/print/<int:id>/", result_sheet_pdf_view, name="result_sheet_pdf_view"),

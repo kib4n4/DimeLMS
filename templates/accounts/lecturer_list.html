@@ -27,7 +27,7 @@
                 <th> {% trans 'Mob No.' %} </th>
                 <th> {% trans 'Address/city' %} </th>
                 <th> {% trans 'Last login' %}  </th>
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or request.user.is_org_admin %}
                 <th> {% trans 'Action' %} </th>
                 {% endif %}
             </tr>
@@ -42,7 +42,7 @@
                 <td>{{ lecturer.phone }}</td>
                 <td>{{ lecturer.address }}</td>
                 <td>{{ lecturer.last_login }}</td>
-                {% if request.user.is_superuser %}
+                {% if request.user.is_superuser or request.user.is_org_admin %}
                 <td> 
                     <div class="dropdown">
                         <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -62,7 +62,7 @@
                   <td colspan="8">
                   <span class="text-danger">
                     {% trans 'No Facilitator(s).' %}
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_superuser or request.user.is_org_admin %}
                     <a href="{% url 'add_lecturer' %}">
                     <i class="primary" style="font-size: 22px;">
                         {% trans 'Add Facilitator Now.' %}
@@ -79,7 +79,7 @@
     </table>
 </div>
 
-{% if request.user.is_superuser %}
+{% if request.user.is_superuser or request.user.is_org_admin %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'add_lecturer' %}"><i class="fas fa-plus"></i>{% trans 'Add Facilitator' %}</a>
     <a class="btn btn-primary" href="{% url 'lecturer_bulk_upload' %}"><i class="fas fa-file-excel"></i> {% trans 'Bulk Upload' %}</a>

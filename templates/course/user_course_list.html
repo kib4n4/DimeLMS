@@ -52,12 +52,13 @@
                     <th> {% trans 'Semester' %} </th>
                     <th> {% trans 'Current Semester' %} </th>
                     <th> {% trans 'Taken' %} </th>
+                    <th> {% trans 'Progress' %} </th>
                 </tr>
             </thead>
             <tbody>
                 {% for course in taken_courses %}
                 <tr>
-                    <td>{{ forloop.counter }}.</td> 
+                    <td>{{ forloop.counter }}.</td>
                     <td><a href="{{ course.get_absolute_url }}">
                         {{ course.course.title }}</a></td>
                     <td>{{ course.course.code }}</td>
@@ -73,6 +74,19 @@
                     </th>
                     <td class="success">
                         <i class="fas fa-check-circle"></i> {% trans 'Taken' %}
+                    </td>
+                    <td style="min-width: 160px;">
+                        {% if course.progress is not None %}
+                        <div class="d-flex align-items-center">
+                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                <div class="progress-bar {% if course.progress >= 100 %}bg-success{% endif %}" role="progressbar"
+                                    style="width: {{ course.progress }}%;"></div>
+                            </div>
+                            <span class="small">{{ course.progress }}%</span>
+                        </div>
+                        {% else %}
+                        <a class="small" href="{% url 'module_list' course.course.slug %}">{% trans 'No modules yet' %}</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

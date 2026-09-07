@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.slug %}">{{ course }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'module_list' course.slug %}">{% trans 'Modules' %}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% trans 'Class progress' %}</li>
+    </ol>
+</nav>
+
+<div class="title-1">{% trans 'Class progress' %} — {{ course.title }}</div>
+<p class="small text-muted">
+    {{ modules|length }} {% trans 'module(s)' %}
+</p>
+
+{% include 'snippets/messages.html' %}
+
+<div class="table-responsive table-shadow table-light table-striped m-0">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{% trans 'Student' %}</th>
+                <th>{% trans 'Course progress' %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    <a href="{% url 'profile_single' row.student.student.id %}">{{ row.student.student.get_full_name }}</a>
+                </td>
+                <td style="min-width: 220px;">
+                    {% if row.percent is not None %}
+                    <div class="d-flex align-items-center">
+                        <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                            <div class="progress-bar {% if row.percent >= 100 %}bg-success{% endif %}" role="progressbar"
+                                style="width: {{ row.percent }}%;"></div>
+                        </div>
+                        <span class="small">{{ row.percent }}%</span>
+                    </div>
+                    {% else %}
+                    <span class="text-muted small">{% trans 'No modules to track yet' %}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">
+                    <span class="text-danger">{% trans 'No student registered for this course yet.' %}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="manage-wrap">
+    <a class="btn btn-sm btn-light" href="{% url 'module_list' course.slug %}">
+        <i class="fas fa-arrow-left"></i> {% trans 'Back to modules' %}
+    </a>
+</div>
+
+{% endblock content %}

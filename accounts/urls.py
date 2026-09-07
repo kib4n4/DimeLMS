@@ -21,6 +21,8 @@ from .views import (
     edit_staff,
     delete_staff,
     student_add_view,
+    student_bulk_upload_view,
+    student_bulk_upload_template,
     edit_student,
     delete_student,
     edit_student_program,
@@ -90,6 +92,16 @@ urlpatterns = [
     path("lecturers/<int:pk>/delete/", delete_staff, name="lecturer_delete"),
     path("students/", StudentListView.as_view(), name="student_list"),
     path("student/add/", student_add_view, name="add_student"),
+    path(
+        "students/bulk-upload/",
+        student_bulk_upload_view,
+        name="student_bulk_upload",
+    ),
+    path(
+        "students/bulk-upload/template/",
+        student_bulk_upload_template,
+        name="student_bulk_upload_template",
+    ),
     path("student/<int:pk>/edit/", edit_student, name="student_edit"),
     path("students/<int:pk>/delete/", delete_student, name="student_delete"),
     path(
