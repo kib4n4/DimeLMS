@@ -58,7 +58,7 @@ def dashboard_view(request):
 @org_admin_required
 def post_add(request):
     if request.method == "POST":
-        form = NewsAndEventsForm(request.POST)
+        form = NewsAndEventsForm(request.POST, request.FILES)
         title = request.POST.get("title")
         if form.is_valid():
             form.save()
@@ -84,7 +84,7 @@ def post_add(request):
 def edit_post(request, pk):
     instance = get_object_or_404(NewsAndEvents, pk=pk)
     if request.method == "POST":
-        form = NewsAndEventsForm(request.POST, instance=instance)
+        form = NewsAndEventsForm(request.POST, request.FILES, instance=instance)
         title = request.POST.get("title")
         if form.is_valid():
             form.save()

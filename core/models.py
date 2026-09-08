@@ -58,6 +58,19 @@ class NewsAndEvents(models.Model):
     title = models.CharField(max_length=200, null=True)
     summary = models.TextField(max_length=200, blank=True, null=True)
     posted_as = models.CharField(choices=POST, max_length=10)
+    image = models.ImageField(
+        upload_to="news_events/",
+        blank=True,
+        null=True,
+        help_text=_("Optional image shown on the card."),
+    )
+    event_time = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "When the event/news item takes place — shown on the card if set."
+        ),
+    )
     updated_date = models.DateTimeField(auto_now=True, auto_now_add=False, null=True)
     upload_time = models.DateTimeField(auto_now=False, auto_now_add=True, null=True)
 
@@ -65,6 +78,11 @@ class NewsAndEvents(models.Model):
 
     def __str__(self):
         return self.title
+
+    def delete(self, *args, **kwargs):
+        if self.image:
+            self.image.delete(save=False)
+        super().delete(*args, **kwargs)
 
 
 class Session(models.Model):

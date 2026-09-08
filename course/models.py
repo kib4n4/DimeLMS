@@ -241,6 +241,18 @@ class Module(models.Model):
             "e.g. one topic split out of an uploaded document."
         ),
     )
+    source_document = models.ForeignKey(
+        "Upload",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generated_modules",
+        help_text=_(
+            "The course document this module's content was auto-split from, "
+            "if any — lets re-opening that document jump back into its "
+            "modules instead of re-splitting it into duplicates."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
