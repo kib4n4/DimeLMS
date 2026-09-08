@@ -27,6 +27,16 @@
     .card-header-ne .title {
         vertical-align: middle;
     }
+
+    .news-card-image {
+        width: 100%;
+        height: 340px;
+        object-fit: cover;
+        display: block;
+    }
+    .news-card-summary {
+        min-height: 90px;
+    }
 </style>
 
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
@@ -56,11 +66,15 @@
         {% for item in items %}
         <div class="col-md-4 mb-4">
             <div class="bg-white border">
+                {% if item.image %}
+                <img src="{{ item.image.url }}" alt="{{ item.title }}" class="news-card-image">
+                {% endif %}
+
                 <div class="card-header-ne {% if item.posted_as == 'News' %}{% trans 'news' %}{% else %}{% trans 'events' %}{% endif %} p-2">
                     <span class="p-0">
                         {{ item.title|title }}
                     </span>
-                    {% if request.user.is_superuser %}
+                    {% if request.user.is_superuser or request.user.is_org_admin %}
                     <div class="dropstart">
                         <button class="btn btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-ellipsis-v text-white"></i>
@@ -75,7 +89,14 @@
                     {% endif %}
                 </div>
 
-                <div class="p-2 my-2" style="min-height: 120px;">{{ item.summary }}</div>
+                <div class="p-2 my-2 news-card-summary">{{ item.summary }}</div>
+
+                {% if item.event_time %}
+                <div class="px-2 pb-2 small text-secondary">
+                    <i class="fa fa-clock small unstyled"></i>
+                    {{ item.event_time|date:"M d, Y, g:i A" }}
+                </div>
+                {% endif %}
 
                 <div class="bg-light p-1 small text-secondary text-end pe-3">
                     <i class="fa fa-calendar small unstyled"></i>
@@ -96,7 +117,7 @@
 
 </div>
 
-{% if request.user.is_superuser %}
+{% if request.user.is_superuser or request.user.is_org_admin %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'add_item' %}"><i class="fas fa-plus"></i>{% trans 'Add New Post' %}</a>
 </div>

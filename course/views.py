@@ -400,12 +400,58 @@ def document_single(request, slug, file_id):
     Anything else (legacy .doc, xls/xlsx, ppt/pptx, zip/rar/7zip) has no
     viewer_kind and isn't linked here — those keep the plain download
     link on the course page instead.
+
+    A .docx with "Heading 1" topics gets a further upgrade: opening it
+    jumps straight into a module-card reading experience for its topics
+    instead of one long page — see the auto-split block below.
     """
     course = get_object_or_404(Course, slug=slug)
     document = get_object_or_404(Upload, pk=file_id, course=course)
 
     if not document.viewer_kind:
         return redirect(document.file.url)
+
+    if document.viewer_kind == "docx":
+        # Already split before (by this view or "Split document into
+        # modules") — jump straight into its modules rather than
+        # re-parsing and duplicating them.
+        first_existing_module = document.generated_modules.order_by("order", "id").first()
+        if first_existing_module:
+            return redirect(first_existing_module.get_absolute_url())
+
+        # Not split yet — opening it (any role) auto-splits it into real
+        # course modules (same rule as "Split document into modules": one
+        # module per Heading 1) and jumps into the first one.
+        try:
+            document.file.open("rb")
+            topics = split_docx_into_topics(document.file)
+        except Exception:
+            topics = []
+        finally:
+            document.file.close()
+
+        if topics:
+            low, high = course.recommended_module_duration
+            default_duration = round((low + high) / 2)
+            starting_order = course.modules.count()
+            created_modules = []
+            with transaction.atomic():
+                for position, topic in enumerate(topics, start=1):
+                    created_modules.append(
+                        Module.objects.create(
+                            course=course,
+                            title=topic["title"][:200],
+                            content=topic["content"],
+                            order=starting_order + position,
+                            duration_minutes=default_duration,
+                            source_document=document,
+                        )
+                    )
+            messages.success(
+                request,
+                f'Split "{document.title}" into {len(created_modules)} module(s).',
+            )
+            return redirect(created_modules[0].get_absolute_url())
 
     paragraphs = None
     extraction_error = None
