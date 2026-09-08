@@ -233,6 +233,14 @@ class Module(models.Model):
     duration_minutes = models.PositiveIntegerField(
         help_text=_("Target duration for this module, in minutes.")
     )
+    content = models.TextField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "Optional reading content shown directly on the module's page — "
+            "e.g. one topic split out of an uploaded document."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -323,6 +331,30 @@ class Upload(models.Model):
             return "powerpoint"
         elif ext in ("zip", "rar", "7zip"):
             return "archive"
+
+    @property
+    def viewer_kind(self):
+        """
+        "pdf" or "docx" if this file can open in the in-page document
+        reader (course.views.document_single) instead of a plain download
+        — PDFs render natively in the browser, and .docx text can be
+        extracted for a plain reading view. Legacy .doc and every other
+        supported type (xls/xlsx/ppt/pptx/zip/rar/7zip) return None and
+        keep the ordinary download link, since there's no lightweight way
+        to render those in-page without a public URL for an external
+        viewer (which a local dev server doesn't have).
+        """
+        name = str(self.file).lower()
+        if name.endswith(".pdf"):
+            return "pdf"
+        if name.endswith(".docx"):
+            return "docx"
+        return None
+
+    def get_absolute_url(self):
+        return reverse(
+            "document_single", kwargs={"slug": self.course.slug, "file_id": self.pk}
+        )
 
     def delete(self, *args, **kwargs):
         self.file.delete()

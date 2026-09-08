@@ -5,6 +5,143 @@
 
 {% block content %}
 
+<style>
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: var(--space-5);
+        margin-bottom: var(--space-6);
+    }
+    .module-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 850px;
+        box-sizing: border-box;
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xs);
+        padding: var(--space-5);
+        transition: box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+    }
+    .module-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--brand-200);
+        transform: translateY(-2px);
+    }
+    .module-card-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
+    }
+    .module-card-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border-radius: var(--radius-full);
+        background: var(--brand-50);
+        color: var(--brand-600);
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: var(--text-sm);
+    }
+    .module-card-manage {
+        display: flex;
+        gap: var(--space-2);
+    }
+    .module-card-manage a {
+        color: var(--text-muted);
+        font-size: var(--text-sm);
+    }
+    .module-card-manage a:hover {
+        color: var(--brand-600);
+    }
+    .module-card-title {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: var(--text-md);
+        color: var(--text-primary);
+        text-decoration: none;
+        display: block;
+        margin-bottom: var(--space-1);
+    }
+    a.module-card-title:hover {
+        color: var(--brand-600);
+    }
+    .module-card-summary {
+        color: var(--text-muted);
+        font-size: var(--text-sm);
+        line-height: 1.5;
+        margin-bottom: var(--space-3);
+        padding-right: var(--space-2);
+        flex-grow: 1;
+        min-height: 0;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-default) transparent;
+    }
+    .module-card-summary::-webkit-scrollbar {
+        width: 6px;
+    }
+    .module-card-summary::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .module-card-summary::-webkit-scrollbar-thumb {
+        background: var(--border-default);
+        border-radius: var(--radius-full);
+    }
+    .module-card-summary::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+    }
+    .module-card-duration {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: var(--text-muted);
+        font-size: var(--text-xs);
+        margin-bottom: var(--space-4);
+    }
+    .module-card-progress {
+        margin-bottom: var(--space-4);
+    }
+    .module-card-progress-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--text-xs);
+        color: var(--text-muted);
+        margin-bottom: var(--space-1);
+    }
+    .module-card-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        width: 100%;
+        padding: .6rem 1rem;
+        border-radius: var(--radius-md);
+        background: var(--brand-500);
+        color: var(--text-on-brand);
+        font-weight: 600;
+        font-size: var(--text-sm);
+        text-decoration: none;
+        margin-top: auto;
+        transition: background-color var(--duration-fast) var(--ease-out);
+    }
+    .module-card-btn:hover {
+        background: var(--brand-600);
+        color: var(--text-on-brand);
+    }
+</style>
+
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
@@ -36,75 +173,58 @@
 </div>
 {% endif %}
 
-<div class="table-responsive table-shadow table-light table-striped m-0">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>{% trans 'Module' %}</th>
-                <th>{% trans 'Duration' %}</th>
-                {% if is_registered_student %}<th>{% trans 'Your progress' %}</th>{% endif %}
-                <th>{% trans 'Open' %}</th>
-                {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
-                <th>{% trans 'Actions' %}</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for module in modules %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>
-                    <a href="{{ module.get_absolute_url }}">{{ module.title }}</a>
-                    {% if module.summary %}<div class="small text-muted">{{ module.summary|truncatechars:80 }}</div>{% endif %}
-                </td>
-                <td>{{ module.duration_minutes }} {% trans 'min' %}</td>
-                {% if is_registered_student %}
-                <td style="min-width: 160px;">
-                    <div class="d-flex align-items-center">
-                        <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                            <div class="progress-bar {% if module.my_progress.completed %}bg-success{% endif %}" role="progressbar"
-                                style="width: {{ module.my_progress.percent_covered|default:0 }}%;"></div>
-                        </div>
-                        <span class="small">{{ module.my_progress.percent_covered|default:0 }}%</span>
-                    </div>
-                </td>
-                {% endif %}
-                <td>
-                    <a class="btn btn-sm btn-primary" href="{{ module.get_absolute_url }}">
-                        <i class="fas fa-play"></i> {% trans 'Open' %}
-                    </a>
-                </td>
-                {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
-                <td>
-                    <div class="update-delete">
-                        <a href="{% url 'module_edit' slug=course.slug pk=module.pk %}" class="update" title="{% trans 'Edit' %}">
-                            <i class="fas fa-pencil-alt"></i>
-                        </a>
-                        <a href="{% url 'module_delete' slug=course.slug pk=module.pk %}" class="delete" title="{% trans 'Delete' %}">
-                            <i class="fas fa-trash-alt"></i>
-                        </a>
-                    </div>
-                </td>
-                {% endif %}
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6">
-                    <span class="text-danger">
-                        {% trans 'No module yet.' %}
-                        {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
-                        <a href="{% url 'module_add' course.slug %}">
-                            <i class="primary" style="font-size: 22px;">{% trans 'Add one now.' %}</i>
-                        </a>
-                        {% endif %}
-                    </span>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% if modules %}
+<div class="module-grid">
+    {% for module in modules %}
+    <div class="module-card">
+        <div class="module-card-top">
+            <span class="module-card-number">{{ forloop.counter }}</span>
+            {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
+            <div class="module-card-manage">
+                <a href="{% url 'module_edit' slug=course.slug pk=module.pk %}" title="{% trans 'Edit' %}">
+                    <i class="fas fa-pencil-alt"></i>
+                </a>
+                <a href="{% url 'module_delete' slug=course.slug pk=module.pk %}" title="{% trans 'Delete' %}">
+                    <i class="fas fa-trash-alt"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <a class="module-card-title" href="{{ module.get_absolute_url }}">{{ module.title }}</a>
+        <p class="module-card-summary">{{ module.summary|default:module.content }}</p>
+
+        <p class="module-card-duration"><i class="far fa-clock"></i> {{ module.duration_minutes }} {% trans 'min' %}</p>
+
+        {% if is_registered_student %}
+        <div class="module-card-progress">
+            <div class="module-card-progress-row">
+                <span>{% trans 'Your progress' %}</span>
+                <span>{{ module.my_progress.percent_covered|default:0 }}%</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+                <div class="progress-bar {% if module.my_progress.completed %}bg-success{% endif %}" role="progressbar"
+                    style="width: {{ module.my_progress.percent_covered|default:0 }}%;"></div>
+            </div>
+        </div>
+        {% endif %}
+
+        <a class="module-card-btn" href="{{ module.get_absolute_url }}">
+            <i class="fas fa-play"></i> {% trans 'Open' %}
+        </a>
+    </div>
+    {% endfor %}
 </div>
+{% else %}
+<p class="text-danger">
+    {% trans 'No module yet.' %}
+    {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
+    <a href="{% url 'module_add' course.slug %}">
+        <i class="primary" style="font-size: 22px;">{% trans 'Add one now.' %}</i>
+    </a>
+    {% endif %}
+</p>
+{% endif %}
 
 <div class="manage-wrap">
     <div class="d-flex">
@@ -112,6 +232,9 @@
             {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
             <a class="btn btn-sm btn-primary" href="{% url 'module_add' course.slug %}">
                 <i class="fas fa-plus"></i> {% trans 'Add module' %}
+            </a>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'module_split' course.slug %}">
+                <i class="fas fa-layer-group"></i> {% trans 'Split document into modules' %}
             </a>
             <a class="btn btn-sm btn-light" href="{% url 'course_tracker_roster' course.slug %}">
                 <i class="fas fa-chart-line"></i> {% trans 'Class progress' %}

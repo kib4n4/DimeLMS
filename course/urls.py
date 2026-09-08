@@ -45,6 +45,11 @@ urlpatterns = [
         handle_file_delete,
         name="upload_file_delete",
     ),
+    path(
+        "course/<slug>/documentations/<int:file_id>/view/",
+        document_single,
+        name="document_single",
+    ),
     # Video uploads urls
     path(
         "course/<slug>/video_tutorials/upload/",
@@ -90,6 +95,7 @@ urlpatterns = [
     # Module & progress tracking urls
     path("course/<slug>/modules/", module_list, name="module_list"),
     path("course/<slug>/modules/add/", module_add, name="module_add"),
+    path("course/<slug>/modules/split/", module_split_view, name="module_split"),
     path("course/<slug>/modules/<int:pk>/edit/", module_edit, name="module_edit"),
     path("course/<slug>/modules/<int:pk>/delete/", module_delete, name="module_delete"),
     path("course/<slug>/modules/<int:pk>/", module_detail, name="module_detail"),

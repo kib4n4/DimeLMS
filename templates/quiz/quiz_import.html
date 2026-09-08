@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+      <li class="breadcrumb-item"><a href="{{ course.get_absolute_url }}">{{ course }}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'quiz_index' course.slug %}">{% trans 'Quizzes' %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans 'Import from document' %}</li>
+    </ol>
+</nav>
+
+<h4 class="fw-bold mb-3"><i class="fas fa-file-import me-2"></i>{% trans 'Import Quiz' %}</h4>
+
+{% include 'snippets/messages.html' %}
+
+<div class="row mb-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <p class="form-title">{% trans 'How it works' %}</p>
+            <div class="p-2">
+                <p class="text-muted">
+                    {% trans 'Upload a .docx or .pdf file (or paste a direct link to one) written in this pattern — one numbered question per block:' %}
+                </p>
+                <pre class="p-2 bg-light small" style="white-space: pre-wrap;">1. What is the capital of France?
+A) Berlin
+B) Madrid
+C) Paris
+D) Rome
+Answer: C
+Explanation: Optional note shown after the question is answered.
+
+2. Explain the water cycle in your own words.
+Explanation: Optional — essay questions just skip the choices and Answer line.</pre>
+                <ul class="text-muted">
+                    <li>{% trans 'Each question starts a new block with "1.", "2.", etc.' %}</li>
+                    <li>{% trans 'Choices are lettered lines like "A)" through however many you need.' %}</li>
+                    <li>{% trans 'An "Answer: <letter>" line marks the correct choice — required for multiple choice, omitted entirely for an essay question.' %}</li>
+                    <li>{% trans '"Explanation:" is optional, shown to the student after they answer.' %}</li>
+                </ul>
+
+                <form action="" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                    {{ form.quiz|as_crispy_field }}
+
+                    <div id="new-quiz-fields">
+                        {{ form.new_quiz_title|as_crispy_field }}
+                        {{ form.new_quiz_description|as_crispy_field }}
+                        {{ form.new_quiz_category|as_crispy_field }}
+                        {{ form.new_quiz_pass_mark|as_crispy_field }}
+                    </div>
+
+                    <hr>
+                    <p class="fw-bold mb-1">{% trans 'Option A — upload a file' %}</p>
+                    {{ form.document|as_crispy_field }}
+
+                    <div class="d-flex align-items-center my-3">
+                        <hr class="flex-grow-1 m-0">
+                        <span class="mx-2 text-muted small text-uppercase">{% trans 'or' %}</span>
+                        <hr class="flex-grow-1 m-0">
+                    </div>
+
+                    <p class="fw-bold mb-1">{% trans 'Option B — paste a link to a hosted document' %}</p>
+                    {{ form.document_url|as_crispy_field }}
+
+                    <input class="btn btn-primary mt-2" type="submit" value="{% trans 'Import' %}">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if row_errors %}
+    <div class="col-lg-6">
+        <div class="card">
+            <p class="form-title text-danger">{% trans "Questions that couldn't be imported" %}</p>
+            <div class="p-2">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans 'Question #' %}</th>
+                            <th>{% trans 'Reason' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row_error in row_errors %}
+                        <tr>
+                            <td>{{ row_error.question|default:'—' }}</td>
+                            <td>{{ row_error.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock content %}
+
+{% block js %}
+<script>
+(function () {
+    "use strict";
+    var quizSelect = document.getElementById("id_quiz");
+    var newQuizFields = document.getElementById("new-quiz-fields");
+    if (!quizSelect || !newQuizFields) return;
+
+    function syncNewQuizFields() {
+        newQuizFields.hidden = quizSelect.value !== "__new__";
+    }
+    quizSelect.addEventListener("change", syncNewQuizFields);
+    syncNewQuizFields();
+})();
+</script>
+{% endblock js %}

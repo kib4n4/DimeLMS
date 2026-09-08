@@ -31,6 +31,11 @@
 
 <div class="container">
 
+    {% if request.user.is_student and not videos and not links and not files %}
+    <p class="text-muted">{% trans 'No materials have been added to this course yet.' %}</p>
+    {% endif %}
+
+    {% if videos or not request.user.is_student %}
     <div class="row mb-5">
         <div class="col-md-12 p-0">
             <p class="form-title m-0">{% trans 'Video Tutorials' %}</p>
@@ -106,7 +111,9 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
+    {% if links or not request.user.is_student %}
     <div class="row mb-5">
         <div class="col-md-12 p-0">
             <p class="form-title m-0"><i class="fab fa-youtube me-1"></i>{% trans 'YouTube Links' %}</p>
@@ -182,7 +189,9 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
+    {% if files or not request.user.is_student %}
     <div class="row">
         <div class="col-md-12 p-0">
             <p class="form-title m-0">{% trans 'Documentations' %}</p>
@@ -194,7 +203,7 @@
                             <th>{% trans 'File name' %}</th>
                             <th>{% trans 'Uploaded Date' %}</th>
                             <th>{% trans 'Updated Date' %}</th>
-                            <th>{% trans 'Downloads' %}</th>
+                            <th>{% trans 'Open' %}</th>
                             {% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
                             <th>{% trans 'Actions' %}</th>
                             {% endif %}
@@ -204,7 +213,7 @@
                         {% for file in files %}
                         <tr>
                             <td>{{ forloop.counter }}</td>
-                            <td><a href="{{ file.file.url }}" title="{{ file }}" class="d-flex align-items-center">
+                            <td><a href="{% if file.viewer_kind %}{{ file.get_absolute_url }}{% else %}{{ file.file.url }}{% endif %}" title="{{ file }}" class="d-flex align-items-center">
                                     <i class="fas fa-file-{{ file.get_extension_short }} me-1"></i>
                                     {{ file.title|title }}
                                 </a>
@@ -213,8 +222,13 @@
                             <td>{{ file.updated_date|date }}</td>
                             <th>
                                 <div>
+                                    {% if file.viewer_kind %}
+                                    <a class="download-btn" href="{{ file.get_absolute_url }}" title="{% trans 'Read' %}">
+                                        <i class="fas fa-book-open me-1"></i>{% trans 'Read' %}</a>
+                                    {% else %}
                                     <a class="download-btn" href="{{ file.file.url }}" title="Download to your device">
                                         <i class="fas fa-download me-1"></i>{% trans 'Download' %}</a>
+                                    {% endif %}
                                 </div>
                             </th>
 
@@ -259,6 +273,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
 </div>
 
@@ -319,7 +334,11 @@
         </div>
         <div class="ms-auto">
             <a class="btn btn-sm btn-warning" href="{% url 'quiz_index' course.slug %}"><i class="fas fa-list"></i>
+                {% if request.user.is_superuser or request.user.is_lecturer %}
+                {% trans 'Manage Quizzes' %}
+                {% else %}
                 {% trans 'Take a Quiz' %}
+                {% endif %}
             </a>
         </div>
     </div>

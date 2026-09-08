@@ -27,7 +27,19 @@ SECRET_KEY = config(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = ["127.0.0.1", "adilmohak1.pythonanywhere.com"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "adilmohak1.pythonanywhere.com"]
+
+# Origins Django will accept a same-site POST (login, any form) as coming
+# from — covers both local dev addresses on the ports this app has run on,
+# plus the production host. Add more via the env var if you access dev on
+# a different host/port (e.g. a LAN IP or a tunnel like ngrok).
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://127.0.0.1:8000,http://localhost:8000,"
+    "http://127.0.0.1:8080,http://localhost:8080,"
+    "https://adilmohak1.pythonanywhere.com",
+    cast=lambda value: [origin.strip() for origin in value.split(",") if origin.strip()],
+)
 
 # change the default user models to our custom model
 AUTH_USER_MODEL = "accounts.User"
@@ -258,3 +270,4 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STUDENT_ID_PREFIX = config("STUDENT_ID_PREFIX", "ugr")
 LECTURER_ID_PREFIX = config("LECTURER_ID_PREFIX", "lec")
+ORG_ADMIN_ID_PREFIX = config("ORG_ADMIN_ID_PREFIX", "adm")

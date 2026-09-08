@@ -2,6 +2,7 @@ import json
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Sum, Avg, Max, Min, Count
 from django.contrib.auth.decorators import login_required
 from django.views.generic import CreateView
@@ -33,8 +34,10 @@ from .forms import (
     UploadFormVideo,
     UploadFormLink,
     ModuleForm,
+    ModuleSplitForm,
 )
 from .filters import ProgramFilter, CourseAllocationFilter
+from .utils import extract_docx_paragraphs, split_docx_into_topics
 from .models import (
     Program,
     Course,
@@ -389,6 +392,64 @@ def handle_file_delete(request, slug, file_id):
     return redirect("course_detail", slug=slug)
 
 
+@login_required
+def document_single(request, slug, file_id):
+    """
+    In-page reading view for a course document — PDFs render inline via
+    the browser's own PDF viewer; .docx files show their extracted text.
+    Anything else (legacy .doc, xls/xlsx, ppt/pptx, zip/rar/7zip) has no
+    viewer_kind and isn't linked here — those keep the plain download
+    link on the course page instead.
+    """
+    course = get_object_or_404(Course, slug=slug)
+    document = get_object_or_404(Upload, pk=file_id, course=course)
+
+    if not document.viewer_kind:
+        return redirect(document.file.url)
+
+    paragraphs = None
+    extraction_error = None
+    if document.viewer_kind == "docx":
+        try:
+            document.file.open("rb")
+            paragraphs = extract_docx_paragraphs(document.file)
+        except Exception:
+            extraction_error = "This document couldn't be opened for preview."
+        finally:
+            document.file.close()
+
+    readable_siblings = [
+        upload
+        for upload in Upload.objects.filter(course=course).order_by("upload_time", "pk")
+        if upload.viewer_kind
+    ]
+    position = next(
+        (i for i, upload in enumerate(readable_siblings) if upload.pk == document.pk),
+        None,
+    )
+    previous_doc = (
+        readable_siblings[position - 1] if position is not None and position > 0 else None
+    )
+    next_doc = (
+        readable_siblings[position + 1]
+        if position is not None and position < len(readable_siblings) - 1
+        else None
+    )
+
+    return render(
+        request,
+        "upload/document_single.html",
+        {
+            "course": course,
+            "document": document,
+            "paragraphs": paragraphs,
+            "extraction_error": extraction_error,
+            "previous_doc": previous_doc,
+            "next_doc": next_doc,
+        },
+    )
+
+
 # ########################################################
 # Video Upload views
 # ########################################################
@@ -607,6 +668,76 @@ def module_add(request, slug):
 
 @login_required
 @course_materials_write_required
+def module_split_view(request, slug):
+    """
+    Auto-generates one Module per top-level topic detected in an uploaded
+    .docx — each "Heading 1"-styled paragraph starts a new topic; its
+    module's `content` is everything until the next Heading 1, including
+    any sub-headings (Heading 2, 3, ...) in between. See
+    course.utils.split_docx_into_topics.
+    """
+    course = get_object_or_404(Course, slug=slug)
+    if request.method == "POST":
+        form = ModuleSplitForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                topics = split_docx_into_topics(form.cleaned_data["document"])
+            except Exception:
+                form.add_error("document", "Couldn't read that file — make sure it's a valid .docx.")
+                return render(
+                    request,
+                    "course/module_split.html",
+                    {"title": "Split Document Into Modules", "course": course, "form": form},
+                )
+
+            if not topics:
+                form.add_error(
+                    "document",
+                    'No "Heading 1" paragraphs were found. Style each top-level topic\'s '
+                    "title as Heading 1 before uploading — sub-headings (Heading 2, 3, "
+                    "...) are fine and become part of that topic's content instead of "
+                    "a topic of their own.",
+                )
+                return render(
+                    request,
+                    "course/module_split.html",
+                    {"title": "Split Document Into Modules", "course": course, "form": form},
+                )
+
+            low, high = course.recommended_module_duration
+            default_duration = round((low + high) / 2)
+            starting_order = course.modules.count()
+
+            created_modules = []
+            with transaction.atomic():
+                for position, topic in enumerate(topics, start=1):
+                    module = Module.objects.create(
+                        course=course,
+                        title=topic["title"][:200],
+                        content=topic["content"],
+                        order=starting_order + position,
+                        duration_minutes=default_duration,
+                    )
+                    created_modules.append(module)
+
+            messages.success(
+                request,
+                f"Created {len(created_modules)} module(s) from \"{form.cleaned_data['document'].name}\". "
+                f"Each was given a {default_duration}-minute default duration — adjust as needed.",
+            )
+            return redirect("module_list", slug=slug)
+    else:
+        form = ModuleSplitForm()
+
+    return render(
+        request,
+        "course/module_split.html",
+        {"title": "Split Document Into Modules", "course": course, "form": form},
+    )
+
+
+@login_required
+@course_materials_write_required
 def module_edit(request, slug, pk):
     course = get_object_or_404(Course, slug=slug)
     instance = get_object_or_404(Module, pk=pk, course=course)
@@ -653,6 +784,15 @@ def module_detail(request, slug, pk):
                 student=student, module=module
             )
 
+    siblings = list(course.modules.all())
+    position = next((i for i, m in enumerate(siblings) if m.pk == module.pk), None)
+    previous_module = siblings[position - 1] if position is not None and position > 0 else None
+    next_module = (
+        siblings[position + 1]
+        if position is not None and position < len(siblings) - 1
+        else None
+    )
+
     return render(
         request,
         "course/module_detail.html",
@@ -665,6 +805,8 @@ def module_detail(request, slug, pk):
             "links": module.links.all(),
             "progress": progress,
             "can_track": can_track,
+            "previous_module": previous_module,
+            "next_module": next_module,
         },
     )
 

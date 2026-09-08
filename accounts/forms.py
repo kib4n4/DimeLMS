@@ -172,6 +172,26 @@ class StaffAddForm(UserCreationForm):
         return user
 
 
+class OrgAdminAddForm(StaffAddForm):
+    """Same fields/layout as StaffAddForm (facilitator add) — only the
+    granted role differs."""
+
+    @transaction.atomic()
+    def save(self, commit=True):
+        user = UserCreationForm.save(self, commit=False)
+        user.is_org_admin = True
+        user.first_name = self.cleaned_data.get("first_name")
+        user.last_name = self.cleaned_data.get("last_name")
+        user.phone = self.cleaned_data.get("phone")
+        user.address = self.cleaned_data.get("address")
+        user.email = self.cleaned_data.get("email")
+
+        if commit:
+            user.save()
+
+        return user
+
+
 class LecturerBulkUploadForm(forms.Form):
     excel_file = forms.FileField(
         label="Excel file",

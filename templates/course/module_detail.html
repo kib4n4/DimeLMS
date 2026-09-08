@@ -5,6 +5,108 @@
 
 {% block content %}
 
+<style>
+    .reader-wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+    }
+    .reader-eyebrow {
+        font-family: var(--font-display);
+        font-size: var(--text-xs);
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--brand-600);
+        margin-bottom: var(--space-2);
+    }
+    .reader-title {
+        font-family: var(--font-display);
+        font-size: var(--text-3xl);
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.25;
+        margin-bottom: var(--space-2);
+    }
+    .reader-meta {
+        color: var(--text-muted);
+        font-size: var(--text-sm);
+        margin-bottom: var(--space-6);
+    }
+    .reader-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+        margin-top: var(--space-6);
+    }
+    .reader-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: .6rem 1.25rem;
+        border-radius: var(--radius-full);
+        font-weight: 600;
+        font-size: var(--text-sm);
+        text-decoration: none;
+        transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+    }
+    .reader-nav-btn.is-prev {
+        background: var(--surface);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-default);
+    }
+    .reader-nav-btn.is-prev:hover {
+        background: var(--surface-hover);
+        color: var(--text-primary);
+        transform: translateX(-2px);
+    }
+    .reader-nav-btn.is-next {
+        background: var(--brand-500);
+        color: var(--text-on-brand);
+        border: 1px solid transparent;
+        box-shadow: var(--shadow-sm);
+        margin-left: auto;
+    }
+    .reader-nav-btn.is-next:hover {
+        background: var(--brand-600);
+        color: var(--text-on-brand);
+        transform: translateX(2px);
+        box-shadow: var(--shadow-md);
+    }
+    .reader-card {
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: var(--space-10) var(--space-8);
+        margin-bottom: var(--space-6);
+    }
+    .reader-card h3 {
+        font-family: var(--font-display);
+        font-size: var(--text-2xl);
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: var(--space-5);
+        padding-bottom: var(--space-4);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+    .reader-card-body {
+        font-size: var(--text-lg);
+        line-height: 1.85;
+        color: var(--text-secondary);
+    }
+    .reader-card-body p {
+        margin-bottom: var(--space-5);
+    }
+    .reader-card-body p:last-child {
+        margin-bottom: 0;
+    }
+    @media (max-width: 576px) {
+        .reader-card { padding: var(--space-6) var(--space-5); }
+        .reader-title { font-size: var(--text-2xl); }
+    }
+</style>
+
 <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
@@ -14,19 +116,29 @@
     </ol>
 </nav>
 
-<div class="title-1">{{ module.title }}</div>
-<p class="small text-muted">
-    {% trans 'Target duration' %}: {{ module.duration_minutes }} {% trans 'min' %}
-    {% if module.summary %} · {{ module.summary }}{% endif %}
-</p>
+<div class="reader-wrap">
+    <p class="reader-eyebrow">{{ course.title }}</p>
+    <div class="reader-title">{{ module.title }}</div>
+    <p class="reader-meta">
+        <i class="far fa-clock me-1"></i>{{ module.duration_minutes }} {% trans 'min' %}
+        {% if module.summary %} · {{ module.summary }}{% endif %}
+    </p>
 
-{% include 'snippets/messages.html' %}
+    {% include 'snippets/messages.html' %}
 
-{% if can_track %}
-<div class="card mb-4">
-    <div class="p-3">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <p class="form-title m-0">{% trans 'Your progress on this module' %}</p>
+    {% if module.content %}
+    <div class="reader-card">
+        <h3>{{ module.title }}</h3>
+        <div class="reader-card-body">
+            {{ module.content|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if can_track %}
+    <div class="reader-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <p class="fw-bold m-0">{% trans 'Your progress on this module' %}</p>
             <strong><span id="module-progress-pct">{{ progress.percent_covered|default:0 }}</span>%</strong>
         </div>
         <div class="progress" style="height: 10px;">
@@ -38,8 +150,23 @@
             {% trans 'Tracked automatically while you watch a video, or while this page is open for documents/links.' %}
         </p>
     </div>
+    {% endif %}
+
+    <div class="reader-nav">
+        {% if previous_module %}
+        <a class="reader-nav-btn is-prev" href="{{ previous_module.get_absolute_url }}">
+            <i class="fas fa-chevron-left"></i>{% trans 'Previous' %}
+        </a>
+        {% else %}
+        <span></span>
+        {% endif %}
+        {% if next_module %}
+        <a class="reader-nav-btn is-next" href="{{ next_module.get_absolute_url }}">
+            {% trans 'Next' %}<i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
 </div>
-{% endif %}
 
 {% if videos %}
 <div class="row mb-5">
@@ -88,13 +215,19 @@
                 <tbody>
                     {% for file in files %}
                     <tr>
-                        <td><a href="{{ file.file.url }}" target="_blank">
+                        <td><a href="{% if file.viewer_kind %}{{ file.get_absolute_url }}{% else %}{{ file.file.url }}{% endif %}" target="_blank">
                             <i class="fas fa-file-{{ file.get_extension_short }} me-1"></i> {{ file.title }}
                         </a></td>
                         <td class="text-end">
+                            {% if file.viewer_kind %}
+                            <a class="download-btn" href="{{ file.get_absolute_url }}" target="_blank">
+                                <i class="fas fa-book-open me-1"></i>{% trans 'Read' %}
+                            </a>
+                            {% else %}
                             <a class="download-btn" href="{{ file.file.url }}" download>
                                 <i class="fas fa-download me-1"></i>{% trans 'Download' %}
                             </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

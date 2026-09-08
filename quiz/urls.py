@@ -13,6 +13,7 @@ urlpatterns = [
     ),
     path("<int:pk>/<slug>/take/", view=QuizTake.as_view(), name="quiz_take"),
     path("<slug>/quiz_add/", QuizCreateView.as_view(), name="quiz_create"),
+    path("<slug>/quiz_import/", quiz_import_view, name="quiz_import"),
     path("<slug>/<int:pk>/add/", QuizUpdateView.as_view(), name="quiz_update"),
     path("<slug>/<int:pk>/delete/", quiz_delete, name="quiz_delete"),
     path(

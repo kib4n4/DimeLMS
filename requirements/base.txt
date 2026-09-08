@@ -15,6 +15,9 @@ django-cors-headers
 reportlab
 xhtml2pdf
 openpyxl
+python-docx
+pypdf
+requests
 
 django-jet-reboot
 python-decouple

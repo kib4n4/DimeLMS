@@ -14,13 +14,29 @@ from django.contrib import messages
 from django.db import transaction
 
 from accounts.decorators import lecturer_required
-from .models import Course, Progress, Sitting, EssayQuestion, Quiz, MCQuestion, Question
+from .models import (
+    Course,
+    Progress,
+    Sitting,
+    EssayQuestion,
+    Quiz,
+    MCQuestion,
+    Question,
+    Choice,
+)
 from .forms import (
     QuizAddForm,
     MCQuestionForm,
     MCQuestionFormSet,
     QuestionForm,
     EssayForm,
+    QuizImportForm,
+)
+from .utils import (
+    QuizDocumentError,
+    extract_quiz_text,
+    fetch_quiz_document,
+    parse_quiz_document,
 )
 
 
@@ -91,6 +107,99 @@ def quiz_delete(request, slug, pk):
     quiz.delete()
     messages.success(request, f"successfuly deleted.")
     return redirect("quiz_index", quiz.course.slug)
+
+
+@login_required
+@lecturer_required
+def quiz_import_view(request, slug):
+    """
+    Lets a facilitator add quiz questions in bulk from a document (.docx
+    or .pdf) or a direct link to one, instead of building them one at a
+    time — see quiz.utils.parse_quiz_document for the expected pattern.
+    """
+    course = get_object_or_404(Course, slug=slug)
+    row_errors = []
+
+    if request.method == "POST":
+        form = QuizImportForm(request.POST, request.FILES, course=course)
+        if form.is_valid():
+            document = form.cleaned_data.get("document")
+            document_url = form.cleaned_data.get("document_url")
+
+            try:
+                if document:
+                    filename, content = document.name, document.read()
+                else:
+                    filename, content = fetch_quiz_document(document_url)
+                text = extract_quiz_text(filename, content)
+            except QuizDocumentError as exc:
+                field = "document" if document else "document_url"
+                form.add_error(field, str(exc))
+                return render(
+                    request,
+                    "quiz/quiz_import.html",
+                    {"title": "Import Quiz", "course": course, "form": form, "row_errors": row_errors},
+                )
+
+            questions, row_errors = parse_quiz_document(text)
+
+            if form.cleaned_data["quiz"] == QuizImportForm.NEW_QUIZ:
+                quiz = Quiz.objects.create(
+                    course=course,
+                    title=form.cleaned_data["new_quiz_title"],
+                    description=form.cleaned_data.get("new_quiz_description", ""),
+                    category=form.cleaned_data.get("new_quiz_category", ""),
+                    pass_mark=form.cleaned_data.get("new_quiz_pass_mark") or 50,
+                )
+            else:
+                quiz = get_object_or_404(Quiz, pk=form.cleaned_data["quiz"], course=course)
+
+            created_count = 0
+            with transaction.atomic():
+                for parsed_question in questions:
+                    if parsed_question["type"] == "mc":
+                        question = MCQuestion.objects.create(
+                            content=parsed_question["content"],
+                            explanation=parsed_question["explanation"],
+                        )
+                        question.quiz.add(quiz)
+                        for choice_text, is_correct in parsed_question["choices"]:
+                            Choice.objects.create(
+                                question=question, choice=choice_text, correct=is_correct
+                            )
+                    else:
+                        question = EssayQuestion.objects.create(
+                            content=parsed_question["content"],
+                            explanation=parsed_question["explanation"],
+                        )
+                        question.quiz.add(quiz)
+                    created_count += 1
+
+            if created_count:
+                messages.success(
+                    request,
+                    f'Imported {created_count} question(s) into "{quiz.title}".',
+                )
+            if row_errors:
+                messages.warning(
+                    request,
+                    f"{len(row_errors)} question(s) couldn't be imported — see below.",
+                )
+            if created_count and not row_errors:
+                return redirect("quiz_index", course.slug)
+
+            # re-show the form (with a fresh copy so the file input isn't
+            # stuck holding a consumed upload) alongside the row errors,
+            # already pointed at the quiz that was just created/added to
+            form = QuizImportForm(course=course, initial={"quiz": quiz.pk})
+    else:
+        form = QuizImportForm(course=course)
+
+    return render(
+        request,
+        "quiz/quiz_import.html",
+        {"title": "Import Quiz", "course": course, "form": form, "row_errors": row_errors},
+    )
 
 
 @method_decorator([login_required, lecturer_required], name="dispatch")

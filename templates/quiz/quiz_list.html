@@ -83,6 +83,7 @@
 {% if request.user.is_superuser or request.user.is_lecturer %}
 <div class="manage-wrap">
     <a class="btn btn-primary" href="{% url 'quiz_create' course.slug %}"><i class="fas fa-plus"></i>{% trans 'Add Quiz' %}</a>
+    <a class="btn btn-outline-primary" href="{% url 'quiz_import' course.slug %}"><i class="fas fa-file-import"></i>{% trans 'Import from document' %}</a>
 </div>
 {% endif %}
 {% endblock %}
