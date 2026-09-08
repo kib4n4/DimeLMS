@@ -7,7 +7,7 @@ from django.db import transaction
 from django.forms.models import inlineformset_factory
 
 from accounts.models import User
-from .models import Question, Quiz, MCQuestion, Choice
+from .models import Question, Quiz, MCQuestion, Choice, CATEGORY_OPTIONS
 
 
 class QuestionForm(forms.Form):
@@ -98,3 +98,62 @@ MCQuestionFormSet = inlineformset_factory(
     can_delete=True,
     extra=5,
 )
+
+
+class QuizImportForm(forms.Form):
+    """Import quiz questions from an uploaded .docx/.pdf document, or a
+    direct link to one — see quiz.utils.parse_quiz_document for the
+    expected text pattern. Either adds to an existing quiz for the course
+    or creates a new one from the fields below."""
+
+    NEW_QUIZ = "__new__"
+
+    quiz = forms.ChoiceField(label=_("Add questions to"))
+    new_quiz_title = forms.CharField(
+        max_length=60, required=False, label=_("New quiz title")
+    )
+    new_quiz_description = forms.CharField(
+        required=False, widget=forms.Textarea(attrs={"rows": 2}), label=_("Description")
+    )
+    new_quiz_category = forms.ChoiceField(
+        choices=[("", "---------")] + list(CATEGORY_OPTIONS),
+        required=False,
+        label=_("Category"),
+    )
+    new_quiz_pass_mark = forms.IntegerField(
+        required=False, min_value=0, max_value=100, initial=50, label=_("Pass mark (%)")
+    )
+
+    document = forms.FileField(required=False, label=_("Document (.docx or .pdf)"))
+    document_url = forms.URLField(
+        required=False, label=_("Document link"),
+        widget=forms.URLInput(attrs={"placeholder": "https://example.com/quiz.docx"}),
+    )
+
+    def __init__(self, *args, course=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.course = course
+        choices = [(self.NEW_QUIZ, _("Create a new quiz"))]
+        if course is not None:
+            choices += [(quiz.pk, quiz.title) for quiz in Quiz.objects.filter(course=course)]
+        self.fields["quiz"].choices = choices
+        for field in self.fields.values():
+            existing = field.widget.attrs.get("class", "")
+            field.widget.attrs["class"] = (existing + " form-control").strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        document = cleaned_data.get("document")
+        document_url = cleaned_data.get("document_url")
+
+        if bool(document) == bool(document_url):
+            raise forms.ValidationError(
+                _("Provide either a document or a link to one — not both, not neither.")
+            )
+
+        if cleaned_data.get("quiz") == self.NEW_QUIZ and not cleaned_data.get(
+            "new_quiz_title"
+        ):
+            self.add_error("new_quiz_title", _("Title is required for a new quiz."))
+
+        return cleaned_data

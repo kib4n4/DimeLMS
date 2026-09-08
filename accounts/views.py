@@ -12,9 +12,10 @@ from django_filters.views import FilterView
 from core.models import Session, Semester, SiteConfiguration
 from course.models import Course
 from result.models import TakenCourse
-from .decorators import org_admin_required, students_read_required
+from .decorators import admin_required, org_admin_required, students_read_required
 from .forms import (
     StaffAddForm,
+    OrgAdminAddForm,
     StudentAddForm,
     ProfileUpdateForm,
     ParentAddForm,
@@ -466,6 +467,100 @@ def delete_staff(request, pk):
     lecturer.delete()
     messages.success(request, "Facilitator " + full_name + " has been deleted.")
     return redirect("lecturer_list")
+
+
+# ########################################################
+
+
+# ########################################################
+# Org Admin views — Super Admin only. Org admins manage facilitators and
+# students; who gets to be an org admin is reserved for the Super Admin,
+# the same way granting org-admin status itself is (see is_org_admin on
+# the User model).
+# ########################################################
+@method_decorator([login_required, admin_required], name="dispatch")
+class OrgAdminFilterView(FilterView):
+    filterset_class = LecturerFilter
+    queryset = User.objects.filter(is_org_admin=True)
+    template_name = "accounts/org_admin_list.html"
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Org Admins"
+        return context
+
+
+@login_required
+@admin_required
+def org_admin_add_view(request):
+    if request.method == "POST":
+        form = OrgAdminAddForm(request.POST)
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        email = request.POST.get("email")
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Account for org admin "
+                + first_name
+                + " "
+                + last_name
+                + " has been created. An email with account credentials will be sent to "
+                + email
+                + " within a minute.",
+            )
+            return redirect("org_admin_list")
+        else:
+            messages.error(request, "Correct the error(s) below.")
+    else:
+        form = OrgAdminAddForm()
+
+    return render(
+        request,
+        "accounts/add_org_admin.html",
+        {
+            "title": "Org Admin Add",
+            "form": form,
+        },
+    )
+
+
+@login_required
+@admin_required
+def edit_org_admin(request, pk):
+    instance = get_object_or_404(User, is_org_admin=True, pk=pk)
+    if request.method == "POST":
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=instance)
+        full_name = instance.get_full_name
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Org admin " + full_name + " has been updated.")
+            return redirect("org_admin_list")
+        else:
+            messages.error(request, "Please correct the error below.")
+    else:
+        form = ProfileUpdateForm(instance=instance)
+    return render(
+        request,
+        "accounts/edit_org_admin.html",
+        {
+            "title": "Edit Org Admin",
+            "form": form,
+        },
+    )
+
+
+@login_required
+@admin_required
+def delete_org_admin(request, pk):
+    org_admin = get_object_or_404(User, is_org_admin=True, pk=pk)
+    full_name = org_admin.get_full_name
+    org_admin.delete()
+    messages.success(request, "Org admin " + full_name + " has been deleted.")
+    return redirect("org_admin_list")
 
 
 # ########################################################

@@ -31,12 +31,23 @@ def generate_lecturer_id():
     return f"{settings.LECTURER_ID_PREFIX}-{registered_year}-{lecturers_count}"
 
 
+def generate_org_admin_id():
+    # Generate a username based on first and last name and registration date
+    registered_year = datetime.now().strftime("%Y")
+    org_admins_count = get_user_model().objects.filter(is_org_admin=True).count()
+    return f"{settings.ORG_ADMIN_ID_PREFIX}-{registered_year}-{org_admins_count}"
+
+
 def generate_student_credentials():
     return generate_student_id(), generate_password()
 
 
 def generate_lecturer_credentials():
     return generate_lecturer_id(), generate_password()
+
+
+def generate_org_admin_credentials():
+    return generate_org_admin_id(), generate_password()
 
 
 class EmailThread(threading.Thread):
@@ -338,6 +349,8 @@ def parse_student_bulk_upload(uploaded_file):
 def send_new_account_email(user, password):
     if user.is_student:
         template_name = "accounts/email/new_student_account_confirmation.html"
+    elif user.is_org_admin:
+        template_name = "accounts/email/new_org_admin_account_confirmation.html"
     else:
         template_name = "accounts/email/new_lecturer_account_confirmation.html"
     email = {

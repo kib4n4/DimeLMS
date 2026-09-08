@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block content %}
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'course_detail' course.slug %}">{{ course }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'module_list' course.slug %}">{% trans 'Modules' %}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% trans 'Split document into modules' %}</li>
+    </ol>
+</nav>
+
+<h4 class="fw-bold mb-3"><i class="fas fa-layer-group me-2"></i>{% trans 'Split Document Into Modules' %}</h4>
+
+{% include 'snippets/messages.html' %}
+
+<div class="row mb-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <p class="form-title">{% trans 'How it works' %}</p>
+            <div class="p-2">
+                <p class="text-muted">
+                    {% trans 'Upload a .docx document that styles each top-level topic\'s title as "Heading 1". One module is created per Heading 1, in order — its content is everything until the next Heading 1.' %}
+                </p>
+                <p class="text-muted">
+                    {% trans 'Sub-headings (Heading 2, 3, ...) don\'t start a new module — they stay part of their parent topic\'s content, so a section with numbered sub-points (e.g. "4.1", "4.2") still becomes just one card.' %}
+                </p>
+                <p class="text-muted">
+                    {% trans 'Each new module gets a default duration you can adjust afterward on the Modules page. Any text before the very first Heading 1 (like a title page) is skipped, since there\'s no topic yet to attach it to.' %}
+                </p>
+
+                <form action="" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                    {{ form.document|as_crispy_field }}
+                    <input class="btn btn-primary mt-2" type="submit" value="{% trans 'Split into modules' %}">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

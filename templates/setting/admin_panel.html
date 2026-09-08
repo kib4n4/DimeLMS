@@ -33,6 +33,17 @@
 <div class="admin-panel-section">
     <p class="admin-section-label">{% trans 'People' %}</p>
     <div class="admin-panel-grid">
+        {% if request.user.is_superuser %}
+        <a href="{% url 'org_admin_list' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-user-shield"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Org Admins' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove org admin accounts.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+        {% endif %}
+
         <a href="{% url 'lecturer_list' %}" class="admin-card">
             <span class="admin-card-icon"><i class="fas fa-chalkboard-teacher"></i></span>
             <span class="admin-card-body">

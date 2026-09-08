@@ -1,6 +1,7 @@
 from .utils import (
     generate_student_credentials,
     generate_lecturer_credentials,
+    generate_org_admin_credentials,
     send_new_account_email,
 )
 
@@ -20,6 +21,14 @@ def post_save_account_receiver(sender, instance=None, created=False, *args, **kw
 
         if instance.is_lecturer:
             username, password = generate_lecturer_credentials()
+            instance.username = username
+            instance.set_password(password)
+            instance.save()
+            # Send email with the generated credentials
+            send_new_account_email(instance, password)
+
+        if instance.is_org_admin:
+            username, password = generate_org_admin_credentials()
             instance.username = username
             instance.set_password(password)
             instance.save()

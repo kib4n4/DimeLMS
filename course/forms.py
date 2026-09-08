@@ -129,6 +129,23 @@ class ModuleForm(forms.ModelForm):
         return value
 
 
+class ModuleSplitForm(forms.Form):
+    """Upload a .docx and auto-create one Module per Heading-styled topic
+    — see course.utils.split_docx_into_topics."""
+
+    document = forms.FileField(label="Document (.docx)")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["document"].widget.attrs.update({"class": "form-control"})
+
+    def clean_document(self):
+        document = self.cleaned_data["document"]
+        if not document.name.lower().endswith(".docx"):
+            raise forms.ValidationError("Please upload a .docx Word document.")
+        return document
+
+
 def _module_field_for_course(course):
     """A shared, optional "Module" field for the material-upload forms
     below, scoped to the given course's modules."""
