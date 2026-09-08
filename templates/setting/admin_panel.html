@@ -16,19 +16,7 @@
 <div class="title-1"><i class="fas fa-user-tie"></i>{% trans 'Admin Panel' %}</div>
 <br>
 <br>
-{% if messages %}
-    {% for message in messages %}
-        {% if message.tags == 'error' %}
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-circle"></i>{{ message }}
-            </div>
-        {% else %}
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i>{{ message }}
-            </div>
-        {% endif %}
-    {% endfor %}
-{% endif %}
+{% include 'snippets/messages.html' %}
 
 <div class="admin-panel-section">
     <p class="admin-section-label">{% trans 'People' %}</p>
@@ -37,7 +25,7 @@
             <span class="admin-card-icon"><i class="fas fa-chalkboard-teacher"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'Facilitators' %}</span>
-                <span class="admin-card-desc">{% trans 'Create, update and remove facilitator accounts.' %}</span>
+                <span class="admin-card-desc">{% trans 'Manage facilitator accounts — add, edit, or remove.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -46,7 +34,7 @@
             <span class="admin-card-icon"><i class="fas fa-user-graduate"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'Students' %}</span>
-                <span class="admin-card-desc">{% trans 'Create, update and remove student accounts.' %}</span>
+                <span class="admin-card-desc">{% trans 'Manage student accounts — add, edit, or remove.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -60,7 +48,7 @@
             <span class="admin-card-icon"><i class="fas fa-calendar-week"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'Sessions' %}</span>
-                <span class="admin-card-desc">{% trans 'Create, update and remove academic sessions.' %}</span>
+                <span class="admin-card-desc">{% trans 'Manage academic sessions and their schedules.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -69,7 +57,7 @@
             <span class="admin-card-icon"><i class="fas fa-calendar-alt"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'Semesters' %}</span>
-                <span class="admin-card-desc">{% trans 'Create, update and remove semesters.' %}</span>
+                <span class="admin-card-desc">{% trans 'Manage semester periods and terms.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -78,7 +66,7 @@
             <span class="admin-card-icon"><i class="fas fa-book-open"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'Programs & Courses' %}</span>
-                <span class="admin-card-desc">{% trans 'Create, update and remove programs and courses.' %}</span>
+                <span class="admin-card-desc">{% trans 'Manage academic programs and course catalog.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -87,7 +75,7 @@
             <span class="admin-card-icon"><i class="fas fa-tasks"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'Course Allocations' %}</span>
-                <span class="admin-card-desc">{% trans 'Assign courses to facilitators.' %}</span>
+                <span class="admin-card-desc">{% trans 'Assign and manage course-facilitator allocations.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -101,7 +89,7 @@
             <span class="admin-card-icon"><i class="fas fa-newspaper"></i></span>
             <span class="admin-card-body">
                 <span class="admin-card-title">{% trans 'News & Events' %}</span>
-                <span class="admin-card-desc">{% trans 'Create, update and remove news and events.' %}</span>
+                <span class="admin-card-desc">{% trans 'Manage announcements, news, and campus events.' %}</span>
             </span>
             <i class="fas fa-chevron-right admin-card-chevron"></i>
         </a>
@@ -109,14 +97,8 @@
         <div class="admin-card">
             <span class="admin-card-icon"><i class="fas fa-plus"></i></span>
             <span class="admin-card-body">
-                <span class="admin-card-title">{% trans 'Course Add' %} &amp; {% trans 'Drop' %}</span>
-                <span class="admin-card-desc">
-                    {% if site_config.course_registration_open %}
-                        {% trans 'Students can currently add or drop courses themselves.' %}
-                    {% else %}
-                        {% trans 'Course registration is currently closed to students.' %}
-                    {% endif %}
-                </span>
+                <span class="admin-card-title">{% trans 'Course Add & Drop' %}</span>
+                <span class="admin-card-desc">{% trans 'Allow students to self-enroll or withdraw from courses.' %}</span>
             </span>
             <form action="{% url 'toggle_course_registration' %}" method="POST" id="registration-toggle-form">
                 {% csrf_token %}
