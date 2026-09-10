@@ -29,7 +29,7 @@ echo "[entrypoint] Running migrations..."
 python manage.py migrate --noinput
 
 echo "[entrypoint] Compiling translation messages (es/fr/ru)..."
-django-admin compilemessages || echo "[entrypoint] compilemessages skipped/failed (non-fatal)"
+python manage.py compilemessages || echo "[entrypoint] compilemessages skipped/failed (non-fatal)"
 
 echo "[entrypoint] Collecting static files..."
 python manage.py collectstatic --noinput
