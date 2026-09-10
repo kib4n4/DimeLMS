@@ -11,8 +11,8 @@ from .validators import ASCIIUsernameValidator
 
 
 # LEVEL_COURSE = "Level course"
-BACHELOR_DEGREE = _("Bachelor")
-MASTER_DEGREE = _("Master")
+BACHELOR_DEGREE = "Bachelor"
+MASTER_DEGREE = "Master"
 
 LEVEL = (
     # (LEVEL_COURSE, "Level course"),
@@ -20,13 +20,13 @@ LEVEL = (
     (MASTER_DEGREE, _("Master Degree")),
 )
 
-FATHER = _("Father")
-MOTHER = _("Mother")
-BROTHER = _("Brother")
-SISTER = _("Sister")
-GRAND_MOTHER = _("Grand mother")
-GRAND_FATHER = _("Grand father")
-OTHER = _("Other")
+FATHER = "Father"
+MOTHER = "Mother"
+BROTHER = "Brother"
+SISTER = "Sister"
+GRAND_MOTHER = "Grand mother"
+GRAND_FATHER = "Grand father"
+OTHER = "Other"
 
 RELATION_SHIP = (
     (FATHER, _("Father")),
@@ -64,7 +64,7 @@ class CustomUserManager(UserManager):
         return self.model.objects.filter(is_superuser=True).count()
 
 
-GENDERS = ((_("M"), _("Male")), (_("F"), _("Female")))
+GENDERS = (("M", _("Male")), ("F", _("Female")))
 
 
 class User(AbstractUser):

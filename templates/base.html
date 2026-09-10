@@ -23,6 +23,14 @@
                     window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
                 document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
             } catch (e) {}
+            // Same idea for the sidebar's collapsed/expanded state — applied to
+            // <html> (the sidebar itself doesn't exist yet at this point) so the
+            // rail CSS is already active by the time it's parsed.
+            try {
+                if (localStorage.getItem("dime-sidebar") === "collapsed") {
+                    document.documentElement.classList.add("sidebar-rail");
+                }
+            } catch (e) {}
         })();
     </script>
 

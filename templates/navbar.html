@@ -7,13 +7,15 @@
 				<i class="fas fa-bars"></i>
 			</div>
 
-			<form class="search-field form-header" action="{% url 'query' %}" method="GET">
-				<button type="submit" class="search-field-icon" aria-label="{% trans 'Search' %}">
-					<i class="fas fa-search"></i>
-				</button>
-				<input id="primary-search" type="text" name="q" value="{{ request.GET.q }}"
-					placeholder="{% trans 'Search All... #course, #program, #Quiz, #News, #Events' %}" required />
-			</form>
+			<div class="nav-search-wrap">
+				<form class="search-field" action="{% url 'query' %}" method="GET">
+					<button type="submit" class="search-field-icon" aria-label="{% trans 'Search' %}">
+						<i class="fas fa-search"></i>
+					</button>
+					<input id="primary-search" type="text" name="q" value="{{ request.GET.q }}"
+						placeholder="{% trans 'Search All... #course, #program, #Quiz, #News, #Events' %}" required />
+				</form>
+			</div>
 
 			<button type="button" class="theme-toggle" id="themeToggle" aria-label="{% trans 'Toggle dark mode' %}">
 				<i class="fas fa-sun theme-toggle-icon theme-toggle-icon--sun"></i>

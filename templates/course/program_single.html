@@ -89,9 +89,7 @@
                     {% trans 'No course for this progrm.' %}
                     {% if request.user.is_superuser or request.user.is_org_admin %}
                     <a href="{% url 'course_add' pk=program.pk %}">
-                    <i class="primary" style="font-size: 22px;">
-                        {% trans 'Add one now.' %}
-                    </i>
+                    <span class="empty-state-cta">{% trans 'Add one now.' %}</span>
                     {% endif %}
                     </a>
                   </span>

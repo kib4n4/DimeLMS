@@ -114,7 +114,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                # 'django.template.context_processors.i18n',
+                "django.template.context_processors.i18n",
                 # 'django.template.context_processors.media',
                 # 'django.template.context_processors.static',
                 # 'django.template.context_processors.tz',
@@ -193,7 +193,7 @@ LANGUAGES = (
 LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 
 MODELTRANSLATION_DEFAULT_LANGUAGE = "en"
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en"
 
 TIME_ZONE = "UTC"
 
