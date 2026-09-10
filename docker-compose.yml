@@ -1,0 +1,78 @@
+name: dimelms
+
+services:
+  # ---------------------------------------------------------------------
+  # Postgres — only needed when DEBUG=False (see .env). When DEBUG=True
+  # the app uses sqlite3 and this service can simply be left stopped:
+  #   docker compose up -d web nginx          (sqlite / DEBUG=True)
+  #   docker compose up -d db web nginx        (postgres / DEBUG=False)
+  # ---------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: dimelms-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - dimelms_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dimelms_network
+    # No host port published — matches the other apps on this box, DB stays internal-only.
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dimelms-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - dimelms_static:/app/staticfiles
+      - dimelms_media:/app/media
+      - dimelms_sqlite:/app/data   # only used when DEBUG=True (sqlite file)
+    networks:
+      - dimelms_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    # No host port published — nginx (below) is the only entrypoint to this container.
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: dimelms-nginx
+    restart: unless-stopped
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - dimelms_static:/app/staticfiles:ro
+      - dimelms_media:/app/media:ro
+    ports:
+      # HTTP only — host-level nginx on the droplet terminates TLS (Let's Encrypt)
+      # and reverse-proxies to 127.0.0.1:8090. Port chosen to avoid clashes with
+      # every other container currently running on this box (9001/9002/6080/6443/
+      # 3000/7070/7080/9443 are all taken).
+      - "127.0.0.1:8090:80"
+    networks:
+      - dimelms_network
+
+networks:
+  dimelms_network:
+    driver: bridge
+
+volumes:
+  dimelms_postgres_data:
+  dimelms_static:
+  dimelms_media:
+  dimelms_sqlite:
