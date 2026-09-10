@@ -27,8 +27,11 @@ SECRET_KEY = config(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "adilmohak1.pythonanywhere.com"]
-
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS",
+    default="127.0.0.1,localhost",
+    cast=lambda v: [h.strip() for h in v.split(",") if h.strip()],
+)
 # Origins Django will accept a same-site POST (login, any form) as coming
 # from — covers both local dev addresses on the ports this app has run on,
 # plus the production host. Add more via the env var if you access dev on
@@ -36,8 +39,7 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost", "adilmohak1.pythonanywhere.com"]
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
     default="http://127.0.0.1:8000,http://localhost:8000,"
-    "http://127.0.0.1:8080,http://localhost:8080,"
-    "https://adilmohak1.pythonanywhere.com",
+    "https://lms.dimeconsultants.africa",
     cast=lambda value: [origin.strip() for origin in value.split(",") if origin.strip()],
 )
 
@@ -129,12 +131,30 @@ ASGI_APPLICATION = "config.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+# Database
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+
+if DEBUG:
+    # Local/dev: sqlite file, persisted to a mounted volume at /app/data
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "data", "db.sqlite3"),
+        }
     }
-}
+else:
+    # Production: Postgres, credentials come from .env
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("POSTGRES_DB"),
+            "USER": config("POSTGRES_USER"),
+            "PASSWORD": config("POSTGRES_PASSWORD"),
+            "HOST": config("POSTGRES_HOST", default="db"),
+            "PORT": config("POSTGRES_PORT", default="5432"),
+            "CONN_MAX_AGE": config("CONN_MAX_AGE", default=60, cast=int),
+        }
+    }
 
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

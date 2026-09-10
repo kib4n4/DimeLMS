@@ -24,3 +24,7 @@ python-decouple
 
 stripe
 gopay
+
+# --- added for Docker/production deployment ---
+gunicorn
+psycopg2-binary
