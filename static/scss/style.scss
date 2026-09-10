@@ -142,6 +142,10 @@
   --radius-lg: 16px;
   --radius-full: 999px;
 
+  /* --- Layout --- */
+  --sidebar-width: 300px;
+  --rail-width: 76px; /* collapsed sidebar: icon-only rail, not fully hidden */
+
   /* --- Type scale --- */
   --font-display: "Space Grotesk", "Rubik", -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -429,8 +433,8 @@ h1, h2, h3, h4, h5, h6 {
   // background-color: rgba(0, 0, 0, 0.05);
   padding-top: 65px;
   padding-bottom: 3rem;
-  padding-left: 300px;
-  transition: 0.5s;
+  padding-left: var(--sidebar-width);
+  transition: padding-left var(--duration-base) var(--ease-out);
 }
 @media (max-width: 800px) {
   #main {
@@ -445,26 +449,21 @@ h1, h2, h3, h4, h5, h6 {
   position: fixed;
   top: 0;
   right: 0;
-  left: 300px;
+  left: var(--sidebar-width);
   -webkit-margin-start: -10px;
   z-index: 90;
   /*padding: 0.4rem 1rem;*/
   background: var(--surface);
   border-bottom: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-xs);
-  transition: background-color var(--duration-base) var(--ease-out), left 0.3s;
+  transition: background-color var(--duration-base) var(--ease-out), left var(--duration-base) var(--ease-out);
 
   .nav-wrapper {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
     align-items: center;
     gap: var(--space-3);
 
-    .form-header {
-      display: flex;
-      flex: 0.8;
-    }
     .toggle-btn {
       cursor: pointer;
       padding: var(--space-1) var(--space-2);
@@ -476,9 +475,34 @@ h1, h2, h3, h4, h5, h6 {
       }
     }
   }
-  &.toggle-active {
-    left: 0;
+}
+/* Desktop icon-rail collapse — driven by a persisted class on <html> (see
+   base.html) rather than .toggle-active, which is reserved for the mobile
+   off-canvas drawer below. Scoped to the rail breakpoint so a persisted
+   preference from a desktop session can never bleed into the mobile
+   drawer's own layout. */
+@media (min-width: 1151px) {
+  html.sidebar-rail #top-navbar {
+    left: var(--rail-width);
   }
+  /* One collapse control, not two: the topbar hamburger is only meaningful
+     below the rail breakpoint (it drives the off-canvas drawer there);
+     above it, .sidebar-rail-toggle on the sidebar itself is the sole
+     control, in both the expanded and collapsed states. */
+  #top-navbar .toggle-btn {
+    display: none;
+  }
+}
+
+/* Fills the space between the hamburger and the right-side icon cluster;
+   keeps the search field itself capped and centered instead of stretching
+   edge-to-edge on wide viewports. */
+.nav-search-wrap {
+  display: flex;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 var(--space-2);
 }
 
 /* Search — first-class component: integrated icon, animated focus ring */
@@ -487,10 +511,11 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: var(--space-2);
   width: 100%;
+  max-width: 640px;
   height: 42px;
   padding: 0 var(--space-4);
-  background: var(--surface-sunken);
-  border: 1.5px solid transparent;
+  background: var(--canvas);
+  border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-full);
   transition: border-color var(--duration-base) var(--ease-out),
     box-shadow var(--duration-base) var(--ease-out), background-color var(--duration-base) var(--ease-out);
@@ -514,7 +539,18 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 0;
     color: var(--text-muted);
     font-size: 0.85rem;
+    appearance: none;
+    -webkit-appearance: none;
     transition: color var(--duration-fast) var(--ease-out);
+
+    /* Override the sitewide icon-badge rule (.fas/.fa get a 34px circular
+       chip) — too large for this 42px pill and crowds its edges. */
+    i {
+      width: auto;
+      height: auto;
+      background: none;
+      border-radius: 0;
+    }
   }
   &:focus-within .search-field-icon {
     color: var(--brand-500);
@@ -544,8 +580,8 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   position: relative;
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   background: var(--surface-sunken);
   border: 1px solid var(--border-subtle);
@@ -558,6 +594,11 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--surface-hover);
     border-color: var(--border-default);
   }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
 
   .theme-toggle-icon {
     position: absolute;
@@ -566,7 +607,7 @@ h1, h2, h3, h4, h5, h6 {
     background: none;
     border-radius: 0;
     font-size: 0.95rem;
-    transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+    transition: transform var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
   }
   .theme-toggle-icon--sun {
     opacity: 1;
@@ -589,8 +630,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 800px) {
-  #top-navbar .nav-wrapper .form-header {
+  #top-navbar .nav-wrapper .nav-search-wrap {
     order: 2;
+    flex-basis: 100%;
   }
   #top-navbar .nav-wrapper .toggle-btn {
     order: 1;
@@ -598,6 +640,50 @@ h1, h2, h3, h4, h5, h6 {
   #top-navbar .nav-wrapper .dropdown {
     order: 3;
   }
+}
+
+// A lone post's column otherwise inherits Bootstrap's 33% row-relative
+// width (fine when there are 3 cards, cramped down to ~120px when there's
+// only 1) — give it a natural fixed card width instead so a single post
+// doesn't render as a squeezed, wrapped-text column.
+.post-grid > .col-md-4:only-child {
+  flex: 0 0 360px;
+  max-width: 360px;
+}
+
+// Empty-state call-to-action link text (e.g. "Add Student Now.") — replaces
+// a copy-pasted <i class="primary" style="font-size:22px"> across ~10
+// templates: .primary had no CSS definition (dead class), the 22px inline
+// override made the link disproportionately larger than the sentence it
+// finishes, and <i> rendered it italic by browser default, none of which
+// was intentional styling.
+.empty-state-cta {
+  font-weight: 600;
+  color: var(--brand-600);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+a:hover .empty-state-cta {
+  color: var(--brand-700);
+}
+
+// Small identity badges next to a section heading (course_registration.html:
+// student's level, gender) — previously .level-wrapper/.info-text had no
+// CSS at all, so this rendered as bare unstyled text.
+.level-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: var(--space-3);
+}
+.info-text {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15em 0.6em;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
 }
 
 // ************* Page action toolbar *************
@@ -655,12 +741,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 800px) {
-  .nav-wrapper .form-header {
+  .nav-wrapper .nav-search-wrap {
     -ms-flex-order: 1;
     order: 1;
-    width: 100%;
-  }
-  .nav-wrapper .form-header .au-input--xl {
     width: 100%;
   }
   .nav-wrapper .toggle-btn {
@@ -756,7 +839,7 @@ h1, h2, h3, h4, h5, h6 {
   //--//-->   Side Navigation
   ======================================*/
 #side-nav {
-  width: 300px;
+  width: var(--sidebar-width);
   position: fixed;
   left: 0;
   top: 0;
@@ -766,15 +849,15 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   z-index: 100;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   resize: horizontal;
   background-color: var(--surface);
   border-right: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-sm);
-  transition: background-color var(--duration-base) var(--ease-out), left 0.3s;
+  transition: background-color var(--duration-base) var(--ease-out),
+    width var(--duration-base) var(--ease-out), left var(--duration-base) var(--ease-out);
   //   padding-bottom: 300px;
-  i {
-    margin-right: var(--space-3);
-  }
   footer {
     margin-top: var(--space-16);
   }
@@ -783,6 +866,7 @@ h1, h2, h3, h4, h5, h6 {
     border-bottom: 1px solid var(--border-subtle);
     margin-bottom: var(--space-2);
     padding: var(--space-2) var(--space-8);
+    transition: padding var(--duration-base) var(--ease-out);
 
     .desktop-hide {
       display: none;
@@ -849,21 +933,239 @@ h1, h2, h3, h4, h5, h6 {
         border-left: 2px solid transparent;
         transition: color var(--duration-fast) var(--ease-out);
 
+        .nav-icon {
+          margin-right: var(--space-3);
+        }
+        .nav-label {
+          opacity: 1;
+          transition: opacity var(--duration-fast) var(--ease-out);
+        }
+
         &:hover {
           color: var(--brand-700);
+
+          .nav-icon {
+            background-color: var(--brand-50);
+          }
         }
       }
       &.active a {
         color: var(--brand-700);
         font-weight: 600;
         border-left-color: var(--brand-500);
+
+        .nav-icon {
+          background-color: var(--brand-50);
+          stroke-width: 2.5;
+        }
       }
     }
   }
-  &.toggle-active {
-    box-shadow: none;
-    left: -300px;
+}
+
+/* Collapsed = icon-only rail, not fully hidden — icons stay visible and
+   centered instead of leaving an empty gap next to the content area.
+   Driven by a class on <html> (persisted + applied pre-paint, see
+   base.html) rather than .toggle-active, which is reserved for the
+   mobile off-canvas drawer further down. Scoped to the rail breakpoint so
+   a persisted preference from a desktop session can never bleed into the
+   mobile drawer's own layout. */
+@media (min-width: 1151px) {
+  html.sidebar-rail #side-nav {
+    width: var(--rail-width);
+
+    .top-side {
+      padding-left: var(--space-2);
+      padding-right: var(--space-2);
+    }
+    .dime-logo,
+    .top-side mark {
+      display: none;
+    }
+    .nav-section-label {
+      opacity: 0;
+      height: 0;
+      margin: 0;
+      overflow: hidden;
+    }
+    ul {
+      padding: 0 var(--space-2);
+    }
+    ul li a {
+      justify-content: center;
+      padding: var(--space-3);
+      border-left-width: 2px;
+
+      .nav-icon {
+        margin-right: 0;
+      }
+      .nav-label {
+        opacity: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+    }
+    /* The language switcher, legal links and copyright have no icon-only
+       equivalent — at 76px wide this text has nowhere to go but a
+       vertical wrap of single words, so hide it rather than let that
+       happen. Comes back as soon as the sidebar re-expands. */
+    footer {
+      display: none;
+    }
   }
+}
+
+/* Sidebar footer (language switcher, legal links, copyright) — previously
+   bare Bootstrap/browser defaults (.card-footer, .small, a plain <select>,
+   default link blue) with no theme tokens at all, so it stayed black-on-
+   white regardless of the active theme and looked unstyled next to the
+   rest of the sidebar. */
+#side-nav footer {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+#side-nav footer #lang-select {
+  width: 100%;
+  height: 34px;
+  padding: 0 var(--space-2);
+  background-color: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+#side-nav footer #lang-select:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+#side-nav footer p {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+#side-nav footer p a {
+  color: var(--brand-600);
+  text-decoration: none;
+}
+#side-nav footer p a:hover {
+  color: var(--brand-700);
+  text-decoration: underline;
+}
+
+/* Sidebar icon system — self-hosted stroke icons (inline <symbol>/<use>,
+   see snippets/nav-icons.html), a deliberately distinct set from the
+   sitewide FontAwesome .fas/.fa glyphs used elsewhere (topbar, cards).
+   Color comes from the parent link's `color` via stroke="currentColor"
+   in each <use>, so hover/active recoloring is automatic — no per-state
+   color override needed here. */
+.nav-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 9px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  background-color: rgba(0, 0, 0, 0.093);
+  transition: background-color var(--duration-fast) var(--ease-out),
+    stroke-width var(--duration-fast) var(--ease-out);
+}
+.nav-icon--inline {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+}
+
+/* Dedicated collapse/expand control — docked to the sidebar's own right
+   edge. This is a sibling of #side-nav in the markup, positioned via
+   `fixed` rather than `absolute` inside it: #side-nav has overflow-x:
+   hidden for the collapse animation, which would otherwise clip a
+   negatively-offset child straddling its border (the same clipping issue
+   .nav-tooltip works around below). Its own `left` transitions in step
+   with the sidebar's width so it visually stays docked through the
+   animation. */
+.sidebar-rail-toggle {
+  position: fixed;
+  top: 88px;
+  left: calc(var(--sidebar-width) - 13px);
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: left var(--duration-base) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+
+  .nav-icon {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    background: none;
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+  &:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-default);
+    color: var(--brand-700);
+  }
+  &:focus-visible {
+    outline: none;
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+}
+html.sidebar-rail .sidebar-rail-toggle {
+  left: calc(var(--rail-width) - 13px);
+}
+html.sidebar-rail .sidebar-rail-toggle .nav-icon {
+  transform: rotate(180deg);
+}
+@media (max-width: 1150px) {
+  .sidebar-rail-toggle {
+    display: none;
+  }
+}
+
+/* Rail-mode label tooltip — a single shared node positioned via JS
+   (see aside.html), not CSS ::after on each link. #side-nav needs
+   overflow-x: hidden for the collapse animation, which would clip an
+   absolutely-positioned tooltip anchored inside it; position: fixed on a
+   node living outside that subtree sidesteps the clip entirely. */
+.nav-tooltip {
+  position: fixed;
+  padding: var(--space-1) var(--space-3);
+  background: var(--text-primary);
+  color: var(--surface);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 200;
+  transition: opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+.nav-tooltip.is-visible {
+  opacity: 1;
 }
 
 /* Sliding nav indicator — a quiet tint that glides between hovered/active
@@ -1015,24 +1317,38 @@ a.admin-card:hover .admin-card-chevron {
     display: block;
   }
 }
-#main.toggle-active {
-  box-shadow: 0px 0px 0px 0px #dbdbdb;
-  padding-left: 0px;
+@media (min-width: 1151px) {
+  html.sidebar-rail #main {
+    box-shadow: 0px 0px 0px 0px #dbdbdb;
+    padding-left: var(--rail-width);
+  }
 }
 
 @media screen and (max-width: 1150px) {
   #side-nav {
     left: -300px;
   }
+  /* Below the rail breakpoint, collapsed means a full-width overlay drawer
+     with a dark scrim, always at full (non-rail) width — the icon-rail
+     rules above are themselves scoped to min-width: 1151px, so there's
+     nothing here to undo even if a rail preference is persisted from a
+     prior desktop session. */
   #side-nav.toggle-active {
     left: 0;
+    width: var(--sidebar-width);
     -webkit-box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5);
     box-shadow: 0 0 0 10000px rgba(0, 0, 0, 0.5);
   }
   #main {
     padding-left: 0;
   }
+  #main.toggle-active {
+    padding-left: 0;
+  }
   #top-navbar {
+    left: 0;
+  }
+  #top-navbar.toggle-active {
     left: 0;
   }
 }
@@ -1563,6 +1879,7 @@ a {
      here hides white icon glyphs on colored/dark parents. */
   background-color: rgba(0, 0, 0, 0.093);
   border-radius: 50%;
+  transition: background-color var(--duration-fast) var(--ease-out);
   &.unstyled {
     background-color: unset;
     border-radius: unset;
@@ -1695,6 +2012,81 @@ a {
   }
   .stat-strip-item:last-child {
     border-bottom: none;
+  }
+}
+
+// Dashboard "Needs Attention" cards — operational status an admin would
+// actually act on (unfilled facilitator slots, no active session, course
+// registration state), not another passive chart. Same card language as
+// .chart-wrap / .admin-card elsewhere, not a plain list of text rows.
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+  margin: 0 var(--space-2) var(--space-6);
+}
+.status-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-5);
+  transition: transform var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+}
+.status-card-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand-50);
+  color: var(--brand-600);
+  font-size: 1.05rem;
+
+  i {
+    width: auto;
+    height: auto;
+    background: none;
+  }
+}
+.status-card--warn .status-card-icon {
+  background: var(--bs-warning-bg-subtle);
+  color: var(--bs-warning-text-emphasis);
+}
+.status-card-body {
+  min-width: 0;
+
+  h6 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  p {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  a {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--brand-600);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--brand-700);
+    text-decoration: underline;
   }
 }
 
@@ -2072,19 +2464,19 @@ a.card:hover {
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 0.35rem;
-  color: #1c1c1e;
+  color: var(--text-primary);
 }
 
 .auth-subtitle {
   font-size: 0.9rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
 .auth-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #3a3a3c;
+  color: var(--text-secondary);
   margin-bottom: 0.4rem;
   display: block;
 }
@@ -2094,16 +2486,16 @@ a.card:hover {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #8e8e93;
+  color: var(--text-muted);
   margin-bottom: 1.25rem;
   padding-bottom: 0.6rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .auth-panel-inner label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #3a3a3c;
+  color: var(--text-secondary);
   margin-bottom: 0.4rem;
 }
 
@@ -2171,7 +2563,7 @@ a.card:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #3a3a3c;
+  color: var(--text-secondary);
   margin: 0;
 
   input {
@@ -2181,12 +2573,12 @@ a.card:hover {
 
 .auth-footer-link {
   font-size: 0.875rem;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-top: 1.75rem;
 
   a {
     font-weight: 600;
-    color: #00b6e1;
+    color: var(--brand-500);
   }
 }
 

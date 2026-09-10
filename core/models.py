@@ -6,17 +6,17 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 
-NEWS = _("News")
-EVENTS = _("Event")
+NEWS = "News"
+EVENTS = "Event"
 
 POST = (
     (NEWS, _("News")),
     (EVENTS, _("Event")),
 )
 
-FIRST = _("First")
-SECOND = _("Second")
-THIRD = _("Third")
+FIRST = "First"
+SECOND = "Second"
+THIRD = "Third"
 
 SEMESTER = (
     (FIRST, _("First")),

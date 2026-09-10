@@ -14,12 +14,18 @@
 	}
 </style>
 
+{% include 'snippets/nav-icons.html' %}
+
+<button type="button" class="sidebar-rail-toggle" onclick="toggleSidebarRail()" aria-label="{% trans 'Collapse sidebar' %}">
+	<svg class="nav-icon" aria-hidden="true"><use href="#icon-chevron"></use></svg>
+</button>
+
 <div id="side-nav">
 	<div class="main-menu">
 		<div class="top-side text-center py-4">
 			<div class="desktop-hide">
 				<div class="toggle-btn" onclick="toggleSidebar()">
-					<i class="fas fa-times"></i>
+					<svg class="nav-icon" aria-hidden="true"><use href="#icon-close"></use></svg>
 				</div>
 			</div>
 			<a href="/" class="dime-logo">
@@ -27,7 +33,7 @@
 			</a>
 			<p class="text-orange">
 				<mark>
-					<i class="far fa-hand-point-right"></i>
+					<svg class="nav-icon nav-icon--inline" aria-hidden="true"><use href="#icon-role-badge"></use></svg>
 					{{ request.user.get_user_role }}
 				</mark>
 			</p>
@@ -48,92 +54,92 @@
 			<p class="nav-section-label">{% trans 'Main' %}</p>
 			{% if request.user.is_superuser or request.user.is_org_admin %}
 			<li class="{% if request.path == dash %}active{% endif %}">
-				<a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i>{% trans 'Dashboard' %}</a>
+				<a href="{% url 'dashboard' %}" data-tooltip="{% trans 'Dashboard' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-dashboard"></use></svg><span class="nav-label">{% trans 'Dashboard' %}</span></a>
 			</li>
 			{% endif %}
 			<li class="{% if request.path == hom %}active{% endif %}">
-				<a href="{% url 'home' %}"><i class="fas fa-home"></i>{% trans 'Home' %}</a>
+				<a href="{% url 'home' %}" data-tooltip="{% trans 'Home' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-home"></use></svg><span class="nav-label">{% trans 'Home' %}</span></a>
 			</li>
 			<li class="{% if request.path == prof %}active{% endif %}">
-				<a href="{% url 'profile' %}"><i class="fas fa-user"></i>{% trans 'Profile' %}</a>
+				<a href="{% url 'profile' %}" data-tooltip="{% trans 'Profile' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-profile"></use></svg><span class="nav-label">{% trans 'Profile' %}</span></a>
 			</li>
 
 			{% if request.user.is_superuser or request.user.is_org_admin %}
 			<li class="{% if request.path == admin_p %}active{% endif %}">
-				<a href="{% url 'admin_panel' %}"><i class="fas fa-user-tie"></i>{% trans 'Admin Panel' %}</a>
+				<a href="{% url 'admin_panel' %}" data-tooltip="{% trans 'Admin Panel' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-admin"></use></svg><span class="nav-label">{% trans 'Admin Panel' %}</span></a>
 			</li>
 			<li class="{% if request.path == lec %}active{% endif %}">
-				<a href="{% url 'lecturer_list' %}"><i class="fas fa-chalkboard-teacher"></i>{% trans 'Facilitators' %}</a>
+				<a href="{% url 'lecturer_list' %}" data-tooltip="{% trans 'Facilitators' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-facilitators"></use></svg><span class="nav-label">{% trans 'Facilitators' %}</span></a>
 			</li>
 			{% endif %}
 
 			{% if request.user.is_superuser or request.user.is_org_admin or request.user.is_lecturer %}
 			<li class="{% if request.path == stu %}active{% endif %}">
-				<a href="{% url 'student_list' %}"><i class="fas fa-user-graduate"></i>{% trans 'Students' %}</a>
+				<a href="{% url 'student_list' %}" data-tooltip="{% trans 'Students' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-students"></use></svg><span class="nav-label">{% trans 'Students' %}</span></a>
 			</li>
 			{% endif %}
 
 			{% if request.user.is_lecturer or request.user.is_student %}
 			<li class="{% if request.path == ucl %}active{% endif %}">
-				<a href="{% url 'user_course_list' %}"><i class="fas fa-book"></i>{% trans 'My Courses' %}</a>
+				<a href="{% url 'user_course_list' %}" data-tooltip="{% trans 'My Courses' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-my-courses"></use></svg><span class="nav-label">{% trans 'My Courses' %}</span></a>
 			</li>
 			{% endif %}
 
 			<li class="{% if request.path == pro %}active{% endif %}">
-				<a href="{% url 'programs' %}"><i class="fas fa-book-open"></i>{% trans 'Programs & Courses' %}</a>
+				<a href="{% url 'programs' %}" data-tooltip="{% trans 'Programs & Courses' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-programs"></use></svg><span class="nav-label">{% trans 'Programs & Courses' %}</span></a>
 			</li>
 
 			{% if request.user.is_superuser or request.user.is_lecturer %}
 			<li class="{% if request.path == qce %}active{% endif %}">
-				<a href="{% url 'quiz_marking' %}"><i class="fas fa-check-double"></i>{% trans 'Complete Exams' %}</a>
+				<a href="{% url 'quiz_marking' %}" data-tooltip="{% trans 'Complete Exams' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-exams"></use></svg><span class="nav-label">{% trans 'Complete Exams' %}</span></a>
 			</li>
 			{% endif %}
 
 			{% if request.user.is_superuser %}
 			<li class="{% if request.path == qpr %}active{% endif %}">
-				<a href="{% url 'quiz_progress' %}"><i class="fas fa-record-vinyl"></i>{% trans 'Quiz Progress Rec' %}</a>
+				<a href="{% url 'quiz_progress' %}" data-tooltip="{% trans 'Quiz Progress Rec' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-quiz-progress"></use></svg><span class="nav-label">{% trans 'Quiz Progress Rec' %}</span></a>
 			</li>
 			{% endif %}
 
 			{% if request.user.is_superuser or request.user.is_org_admin %}
 			<li class="{% if request.path == cav %}active{% endif %}">
-				<a href="{% url 'course_allocation_view' %}"><i class="fas fa-tasks"></i>{% trans 'Course Allocation' %}</a>
+				<a href="{% url 'course_allocation_view' %}" data-tooltip="{% trans 'Course Allocation' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-course-allocation"></use></svg><span class="nav-label">{% trans 'Course Allocation' %}</span></a>
 			</li>
 			{% endif %}
 
 			<li class="{% if request.path == sess %}active{% endif %}">
-				<a href="{% url 'session_list' %}"><i class="fas fa-calendar-week"></i>{% trans 'Manage Session' %}</a>
+				<a href="{% url 'session_list' %}" data-tooltip="{% trans 'Manage Session' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-session"></use></svg><span class="nav-label">{% trans 'Manage Session' %}</span></a>
 			</li>
 			<li class="{% if request.path == sem %}active{% endif %}">
-				<a href="{% url 'semester_list' %}"><i class="fas fa-calendar-alt"></i>{% trans 'Manage Semester' %}</a>
+				<a href="{% url 'semester_list' %}" data-tooltip="{% trans 'Manage Semester' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-semester"></use></svg><span class="nav-label">{% trans 'Manage Semester' %}</span></a>
 			</li>
 
 			{% if request.user.is_lecturer or request.user.is_org_admin %}
 			<li class="{% if request.path == ascore %}active{% endif %}">
-				<a href="{% url 'add_score' %}"><i class="fas fa-table"></i>{% trans 'Manage Score' %}</a>
+				<a href="{% url 'add_score' %}" data-tooltip="{% trans 'Manage Score' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-score"></use></svg><span class="nav-label">{% trans 'Manage Score' %}</span></a>
 			</li>
 			{% endif %}
 
 			{% if request.user.is_student %}
 			<li class="{% if request.path == qpr %}active{% endif %}">
-				<a href="{% url 'quiz_progress' %}"><i class="fas fa-record-vinyl"></i>{% trans 'Quiz Progress Rec' %}</a>
+				<a href="{% url 'quiz_progress' %}" data-tooltip="{% trans 'Quiz Progress Rec' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-quiz-progress"></use></svg><span class="nav-label">{% trans 'Quiz Progress Rec' %}</span></a>
 			</li>
 			<li class="{% if request.path == vr %}active{% endif %}">
-				<a href="{% url 'grade_results' %}"><i class="fa fa-spell-check"></i>{% trans 'Grade Results' %}</a>
+				<a href="{% url 'grade_results' %}" data-tooltip="{% trans 'Grade Results' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-grade-results"></use></svg><span class="nav-label">{% trans 'Grade Results' %}</span></a>
 			</li>
 			<li class="{% if request.path == ar %}active{% endif %}">
-				<a href="{% url 'ass_results' %}"><i class="fa fa-list-ol"></i> {% trans 'Assesment Results' %}</a>
+				<a href="{% url 'ass_results' %}" data-tooltip="{% trans 'Assesment Results' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-assessment-results"></use></svg><span class="nav-label">{% trans 'Assesment Results' %}</span></a>
 			</li>
 			<li class="{% if request.path == cr %}active{% endif %}">
-				<a href="{% url 'course_registration' %}"><i class="fas fa-plus"></i>{% trans 'Add' %} &amp;{% trans 'Drop Course' %}</a>
+				<a href="{% url 'course_registration' %}" data-tooltip="{% trans 'Add' %} &amp;{% trans 'Drop Course' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-course-registration"></use></svg><span class="nav-label">{% trans 'Add' %} &amp;{% trans 'Drop Course' %}</span></a>
 			</li>
 			{% endif %}
 			<p class="nav-section-label">{% trans 'Account' %}</p>
 			<li class="{% if request.path == ep %}active{% endif %}">
-				<a href="{% url 'edit_profile' %}"><i class="fas fa-cogs"></i>{% trans 'Account Setting' %}</a>
+				<a href="{% url 'edit_profile' %}" data-tooltip="{% trans 'Account Setting' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-account-settings"></use></svg><span class="nav-label">{% trans 'Account Setting' %}</span></a>
 			</li>
 			<li class="{% if request.path == cp %}active{% endif %}">
-				<a href="{% url 'change_password' %}"><i class="fas fa-key"></i>{% trans 'Change Password' %}</a>
+				<a href="{% url 'change_password' %}" data-tooltip="{% trans 'Change Password' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-change-password"></use></svg><span class="nav-label">{% trans 'Change Password' %}</span></a>
 			</li>
 		</ul>
 	</div>
@@ -142,7 +148,7 @@
 		<div class="col-12">
 
 			<form action="{% url 'set_language' %}" method="post" id="lang-form">{% csrf_token %}
-				<input name="next" type="hidden" value="{{ redirect_to }}">
+				<input name="next" type="hidden" value="{{ request.get_full_path }}">
 				<select class="small" name="language" id="lang-select">
 					{% get_current_language as LANGUAGE_CODE %}
 					{% get_available_languages as LANGUAGES %}
@@ -163,6 +169,8 @@
 		</div>
 	</footer>
 </div>
+
+<div id="nav-tooltip" class="nav-tooltip" role="tooltip"></div>
 
 {% block js %}
 <script>
@@ -196,6 +204,42 @@
 		nav.addEventListener("mouseleave", function () {
 			indicator.classList.remove("is-visible");
 		});
+	})();
+
+	(function () {
+		// Rail-mode label tooltip. Positioned via JS (not CSS ::after) because
+		// #side-nav needs overflow-x: hidden for the collapse animation, which
+		// would otherwise clip an absolutely-positioned tooltip anchored inside it.
+		var tooltip = document.getElementById("nav-tooltip");
+		var links = document.querySelectorAll("#side-nav ul li a[data-tooltip]");
+		if (!tooltip || !links.length) return;
+
+		function isRailMode() {
+			return document.documentElement.classList.contains("sidebar-rail") &&
+				window.matchMedia("(min-width: 1151px)").matches;
+		}
+
+		function show(link) {
+			if (!isRailMode()) return;
+			var rect = link.getBoundingClientRect();
+			tooltip.textContent = link.getAttribute("data-tooltip");
+			tooltip.style.left = (rect.right + 12) + "px";
+			tooltip.style.top = (rect.top + rect.height / 2) + "px";
+			tooltip.style.transform = "translateY(-50%)";
+			tooltip.classList.add("is-visible");
+		}
+
+		function hide() {
+			tooltip.classList.remove("is-visible");
+		}
+
+		links.forEach(function (link) {
+			link.addEventListener("mouseenter", function () { show(link); });
+			link.addEventListener("focus", function () { show(link); });
+			link.addEventListener("mouseleave", hide);
+			link.addEventListener("blur", hide);
+		});
+		window.addEventListener("resize", hide);
 	})();
 </script>
 {% endblock js %}

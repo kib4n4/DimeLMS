@@ -66,9 +66,7 @@
                     {% trans 'No Student.' %}
                     {% if request.user.is_superuser or request.user.is_org_admin %}
                     <a href="{% url 'add_student' %}">
-                    <i class="primary" style="font-size: 22px;">
-                        {% trans 'Add Student Now.' %}
-                    </i>
+                    <span class="empty-state-cta">{% trans 'Add Student Now.' %}</span>
                     {% endif %}
                     </a>
                   </span>

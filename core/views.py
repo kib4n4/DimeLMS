@@ -1,9 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Avg, Count
 
 from accounts.decorators import org_admin_required, courses_read_required
 from accounts.models import User, Student
+from course.models import Course
+from result.models import TakenCourse
 from .forms import SessionForm, SemesterForm, NewsAndEventsForm
 from .models import NewsAndEvents, ActivityLog, Session, Semester, SiteConfiguration
 
@@ -43,6 +46,44 @@ def home_view(request):
 def dashboard_view(request):
     logs = ActivityLog.objects.all().order_by("-created_at")[:10]
     gender_count = Student.get_gender_count()
+
+    # Student level breakdown (e.g. Bachelor Degree / Master Degree).
+    level_display = dict(Student._meta.get_field("level").choices)
+    level_rows = (
+        Student.objects.exclude(level__isnull=True)
+        .values("level")
+        .annotate(count=Count("id"))
+        .order_by("level")
+    )
+    level_labels = [str(level_display.get(row["level"], row["level"])) for row in level_rows]
+    level_values = [row["count"] for row in level_rows]
+
+    # Students enrolled per program.
+    program_rows = (
+        Student.objects.exclude(program__isnull=True)
+        .values("program__title")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+    )
+    program_labels = [row["program__title"] for row in program_rows]
+    program_values = [row["count"] for row in program_rows]
+
+    # Average total score per program, from courses students have taken.
+    grade_rows = (
+        TakenCourse.objects.exclude(course__program__isnull=True)
+        .values("course__program__title")
+        .annotate(avg_total=Avg("total"))
+        .order_by("course__program__title")
+    )
+    grade_labels = [row["course__program__title"] for row in grade_rows]
+    grade_values = [round(float(row["avg_total"]), 1) for row in grade_rows]
+
+    # Operational checklist: things an admin would actually want to act on.
+    current_session = Session.objects.filter(is_current_session=True).first()
+    current_semester = Semester.objects.filter(is_current_semester=True).first()
+    unallocated_courses = Course.objects.filter(allocated_course__isnull=True).order_by("title")
+    site_config = SiteConfiguration.get_solo()
+
     context = {
         "student_count": User.objects.get_student_count(),
         "lecturer_count": User.objects.get_lecturer_count(),
@@ -50,6 +91,16 @@ def dashboard_view(request):
         "males_count": gender_count["M"],
         "females_count": gender_count["F"],
         "logs": logs,
+        "level_labels": level_labels,
+        "level_values": level_values,
+        "program_labels": program_labels,
+        "program_values": program_values,
+        "grade_labels": grade_labels,
+        "grade_values": grade_values,
+        "current_session": current_session,
+        "current_semester": current_semester,
+        "unallocated_courses": unallocated_courses,
+        "site_config": site_config,
     }
     return render(request, "core/dashboard.html", context)
 

@@ -59,9 +59,7 @@
                 <span class="text-danger">{% trans 'No Course Allocated.' %}
                     {% if request.user.is_superuser or request.user.is_org_admin %}
                     <a href="{% url 'course_allocation' %}">
-                    <i class="primary" style="font-size: 22px;">
-                        {% trans 'Allocate now' %}
-                    </i>
+                    <span class="empty-state-cta">{% trans 'Allocate now' %}</span>
                     {% endif %}
                     </a>
                 </span>
