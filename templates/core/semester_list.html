@@ -77,9 +77,7 @@
                         {% trans 'No Semester.' %}
                         {% if request.user.is_superuser or request.user.is_org_admin %}
                         <a href="{% url 'add_semester' %}">
-                            <i class="primary" style="font-size: 22px;">
-                                {% trans 'Add Semester Now.' %}
-                            </i>
+                            <span class="empty-state-cta">{% trans 'Add Semester Now.' %}</span>
                             {% endif %}
                         </a>
                     </span>

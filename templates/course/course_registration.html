@@ -195,7 +195,10 @@
 <div class="col-md-12 p-0 bg-white">
     <p class="form-title"><b>{% trans 'Course Drop' %}</b>
     <div class="level-wrapper">
-        <div class="info-text">{{ student.level }}</div>
+        <span class="info-text">{{ student.level }}</span>
+        {% if student.student.gender %}
+        <span class="info-text">{{ student.student.get_gender_display }}</span>
+        {% endif %}
     </div>
     </p>
     <div class="container">

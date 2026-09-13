@@ -19,19 +19,6 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
 	<h1 class="title-1">{% trans 'Dashboard' %}</h1>
-	<div class="dropdown">
-		<button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown"
-			aria-expanded="false">
-			<i class="fas fa-cog"></i>
-		</button>
-		<div class="dropdown-menu">
-			<h6 class="dropdown-header">{% trans 'Dashboard settings' %}</h6>
-			<button class="dropdown-item active" type="button">{% trans 'Display grid' %}</button>
-			<button class="dropdown-item" type="button">{% trans 'Display table' %}</button>
-			<hr>
-			<button class="dropdown-item" type="button">{% trans 'Manage dashboard' %}</button>
-		</div>
-	</div>
 </div>
 
 <div class="stat-strip">
@@ -70,27 +57,69 @@
 	</div>
 </div>
 
+<div class="status-cards">
+	<div class="status-card {% if not current_session or not current_semester %}status-card--warn{% endif %}">
+		<span class="status-card-icon"><i class="fas {% if current_session and current_semester %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %}"></i></span>
+		<div class="status-card-body">
+			<h6>{% trans 'Active Session' %}</h6>
+			{% if current_session and current_semester %}
+			<p>{% blocktrans with session=current_session.session semester=current_semester.get_semester_display %}<strong>{{ session }}</strong>, {{ semester }} semester.{% endblocktrans %}</p>
+			{% else %}
+			<p>{% trans 'No active session/semester is set.' %}</p>
+			<a href="{% url 'session_list' %}">{% trans 'Set one now' %}</a>
+			{% endif %}
+		</div>
+	</div>
+	<div class="status-card">
+		<span class="status-card-icon"><i class="fas {% if site_config.course_registration_open %}fa-unlock{% else %}fa-lock{% endif %}"></i></span>
+		<div class="status-card-body">
+			<h6>{% trans 'Course Registration' %}</h6>
+			{% if site_config.course_registration_open %}
+			<p>{% trans 'Open — students can add or drop courses.' %}</p>
+			{% else %}
+			<p>{% trans 'Closed to students.' %}</p>
+			{% endif %}
+			<a href="{% url 'admin_panel' %}">{% trans 'Manage' %}</a>
+		</div>
+	</div>
+	<div class="status-card {% if unallocated_courses %}status-card--warn{% endif %}">
+		<span class="status-card-icon"><i class="fas {% if unallocated_courses %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i></span>
+		<div class="status-card-body">
+			<h6>{% trans 'Facilitator Coverage' %}</h6>
+			{% if unallocated_courses %}
+			<p>{% blocktrans count counter=unallocated_courses|length %}{{ counter }} course has no facilitator:{% plural %}{{ counter }} courses have no facilitator:{% endblocktrans %}
+			{% for c in unallocated_courses|slice:':3' %}{{ c.title }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if unallocated_courses|length > 3 %}&hellip;{% endif %}</p>
+			<a href="{% url 'course_allocation_view' %}">{% trans 'Assign now' %}</a>
+			{% else %}
+			<p>{% trans 'All courses have a facilitator assigned.' %}</p>
+			{% endif %}
+		</div>
+	</div>
+</div>
+
 <div class="row px-2">
 	<div class="col-md-6 p-2">
 		<div class="chart-wrap">
-			<i class="fas fa-expand-alt"></i>
-			<canvas id="traffic"></canvas>
-		</div>
-	</div>
-	<div class="col-md-6 p-2">
-		<div class="chart-wrap">
+			{% if program_labels %}
 			<i class="fas fa-expand-alt"></i>
 			<canvas id="enrollement"></canvas>
+			{% else %}
+			<p class="text-muted text-center my-5">{% trans 'No students enrolled in a program yet.' %}</p>
+			{% endif %}
 		</div>
 	</div>
 	<div class="col-md-6 p-2">
 		<div class="chart-wrap">
+			{% if grade_labels %}
 			<i class="fas fa-expand-alt"></i>
 			<canvas id="students_grade"></canvas>
+			{% else %}
+			<p class="text-muted text-center my-5">{% trans 'No recorded course scores yet.' %}</p>
+			{% endif %}
 		</div>
 	</div>
-	<div class="col-md-6 p-2">
-		<div class="card w-100 h-100 p-3">
+	<div class="col-md-12 p-2">
+		<div class="card w-100 p-3">
 			<h5>{% trans 'Latest activities' %}</h5>
 			<ul class="ps-2 small">
 				{% for log in logs %}
@@ -106,17 +135,17 @@
 <div class="bg-white p-3">
 	<h5 class="border-bottom pb-2">{% trans 'School Demographics' %}</h5>
 	<div class="row">
-		<div class="col-md-4">
+		<div class="col-md-6">
 			<i class="fas fa-expand-alt"></i>
 			<canvas id="gender"></canvas>
 		</div>
-		<div class="col-md-4">
+		<div class="col-md-6">
+			{% if level_labels %}
 			<i class="fas fa-expand-alt"></i>
-			<canvas id="ethnicity"></canvas>
-		</div>
-		<div class="col-md-4">
-			<i class="fas fa-expand-alt"></i>
-			<canvas id="language"></canvas>
+			<canvas id="studentLevels"></canvas>
+			{% else %}
+			<p class="text-muted text-center my-5">{% trans 'No student level data yet.' %}</p>
+			{% endif %}
 		</div>
 	</div>
 </div>
@@ -124,6 +153,13 @@
 {% endblock content %}
 
 {% block js %}
+
+{{ level_labels|json_script:"level-labels" }}
+{{ level_values|json_script:"level-values" }}
+{{ program_labels|json_script:"program-labels" }}
+{{ program_values|json_script:"program-values" }}
+{{ grade_labels|json_script:"grade-labels" }}
+{{ grade_values|json_script:"grade-values" }}
 
 <script src="{% url 'javascript-catalog' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
@@ -254,86 +290,6 @@ const femalesCount = {{ females_count }};
 		return chart;
 	}
 
-	// Setup
-	const labels = [
-		gettext('January'),
-		gettext('February'),
-		gettext('March'),
-		gettext('April'),
-		gettext('May'),
-		gettext('June'),
-	];
-	const data = {
-		labels: labels,
-		datasets: makeDatasets([
-			{ label: gettext('Students'), data: [0, 10, 5, 2, 20, 30, 45] },
-			{ label: gettext('Teachers'), data: [20, 0, 15, 4, 6, 4, 60] },
-			{ label: gettext('Admins'), data: [85, 30, 34, 20, 20, 55, 45] },
-			{ label: gettext('Stuffs'), data: [45, 75, 70, 80, 20, 30, 90] },
-		]),
-	};
-
-	var traffic = document.getElementById('traffic');
-	track(new Chart(traffic, {
-		type: 'line',
-		data: data,
-		options: baseOptions({
-			scales: scalesFor('line'),
-			plugins: {
-				title: { display: true, text: gettext('Website Traffic'), padding: 15 },
-			},
-		}),
-	}));
-
-	// Setup
-	const labelsEnrollment = ['2016', '2017', '2018', '2019', '2020', '2021'];
-	const dataEnrollment = {
-		labels: labelsEnrollment,
-		datasets: makeDatasets([
-			{ label: gettext('Comp.S'), data: [0, 10, 5, 2, 20, 30, 45] },
-			{ label: gettext('Architecture'), data: [20, 0, 15, 4, 6, 4, 60] },
-			{ label: gettext('Civil Eng'), data: [85, 30, 34, 20, 20, 55, 45] },
-			{ label: gettext('Accounting'), data: [45, 75, 70, 80, 20, 30, 90] },
-			{ label: gettext('Business M.'), data: [15, 75, 45, 90, 60, 30, 90] },
-		]),
-	};
-
-	var enrollement = document.getElementById('enrollement');
-	track(new Chart(enrollement, {
-		type: 'bar',
-		data: dataEnrollment,
-		options: baseOptions({
-			scales: scalesFor('bar'),
-			plugins: {
-				title: { display: true, text: gettext('Enrollment per course'), padding: 20 },
-			},
-		}),
-	}));
-
-	// Average grade setup
-	const labelsGrade = ['2017', '2018', '2019', '2020', '2022'];
-	const dataGrade = {
-		labels: labelsGrade,
-		datasets: makeDatasets([
-			{ label: gettext('Comp sci.'), data: [0, 10, 5, 2, 20, 30, 45] },
-			{ label: gettext('Civil eng.'), data: [20, 0, 15, 4, 6, 4, 60] },
-			{ label: gettext('Architect.'), data: [85, 30, 34, 20, 20, 55, 45] },
-			{ label: gettext('Economics'), data: [45, 75, 70, 80, 20, 30, 90] },
-		]),
-	};
-
-	var students_grade = document.getElementById('students_grade');
-	track(new Chart(students_grade, {
-		type: 'bar',
-		data: dataGrade,
-		options: baseOptions({
-			scales: scalesFor('bar'),
-			plugins: {
-				title: { display: true, text: gettext('Students average grade (performance)'), padding: 20 },
-			},
-		}),
-	}));
-
 	function pieDataset(values) {
 		return [{
 			data: values,
@@ -342,6 +298,46 @@ const femalesCount = {{ females_count }};
 			borderWidth: 2,
 			hoverOffset: 8,
 		}];
+	}
+
+	const programLabels = JSON.parse(document.getElementById('program-labels').textContent);
+	const programValues = JSON.parse(document.getElementById('program-values').textContent);
+	const enrollement = document.getElementById('enrollement');
+	if (enrollement) {
+		track(new Chart(enrollement, {
+			type: 'bar',
+			data: {
+				labels: programLabels,
+				datasets: makeDatasets([{ label: gettext('Students'), data: programValues }]),
+			},
+			options: baseOptions({
+				scales: scalesFor('bar'),
+				plugins: {
+					legend: { display: false },
+					title: { display: true, text: gettext('Enrollment per program'), padding: 20 },
+				},
+			}),
+		}));
+	}
+
+	const gradeLabels = JSON.parse(document.getElementById('grade-labels').textContent);
+	const gradeValues = JSON.parse(document.getElementById('grade-values').textContent);
+	const students_grade = document.getElementById('students_grade');
+	if (students_grade) {
+		track(new Chart(students_grade, {
+			type: 'bar',
+			data: {
+				labels: gradeLabels,
+				datasets: makeDatasets([{ label: gettext('Average score'), data: gradeValues }]),
+			},
+			options: baseOptions({
+				scales: scalesFor('bar'),
+				plugins: {
+					legend: { display: false },
+					title: { display: true, text: gettext('Average score per program'), padding: 20 },
+				},
+			}),
+		}));
 	}
 
 	const dataGender = {
@@ -357,31 +353,21 @@ const femalesCount = {{ females_count }};
 		}),
 	}));
 
-	const dataQualification = {
-		labels: [gettext('PHD'), gettext('Masters'), gettext('BSc degree')],
-		datasets: pieDataset([24, 30, 26]),
-	};
-	var ethnicity = document.getElementById('ethnicity');
-	track(new Chart(ethnicity, {
-		type: 'pie',
-		data: dataQualification,
-		options: baseOptions({
-			plugins: { title: { display: true, text: gettext('Lecturer qualifications'), padding: 20 } },
-		}),
-	}));
-
-	const dataLevels = {
-		labels: [gettext('PHD'), gettext('Masters'), gettext('BSc degree')],
-		datasets: pieDataset([14, 30, 56]),
-	};
-	var language = document.getElementById('language');
-	track(new Chart(language, {
-		type: 'pie',
-		data: dataLevels,
-		options: baseOptions({
-			plugins: { title: { display: true, text: gettext('Student levels'), padding: 20 } },
-		}),
-	}));
+	const levelLabels = JSON.parse(document.getElementById('level-labels').textContent);
+	const levelValues = JSON.parse(document.getElementById('level-values').textContent);
+	const studentLevels = document.getElementById('studentLevels');
+	if (studentLevels) {
+		track(new Chart(studentLevels, {
+			type: 'pie',
+			data: {
+				labels: levelLabels,
+				datasets: pieDataset(levelValues),
+			},
+			options: baseOptions({
+				plugins: { title: { display: true, text: gettext('Student levels'), padding: 20 } },
+			}),
+		}));
+	}
 
 	// Re-theme in place when the user toggles dark mode, instead of requiring a reload.
 	window.addEventListener('dime-theme-change', function () {

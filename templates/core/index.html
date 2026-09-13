@@ -62,7 +62,7 @@
 
 <div class="container-fluid">
     {% if items %}
-    <div class="row">
+    <div class="row post-grid">
         {% for item in items %}
         <div class="col-md-4 mb-4">
             <div class="bg-white border">
@@ -99,7 +99,7 @@
                 {% endif %}
 
                 <div class="bg-light p-1 small text-secondary text-end pe-3">
-                    <i class="fa fa-calendar small unstyled"></i>
+                    <i class="fas fa-calendar small unstyled"></i>
                     {{ item.updated_date|timesince }} {% trans 'ago' %}
                 </div>
 

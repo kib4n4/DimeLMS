@@ -1,12 +1,26 @@
 "use strict";
 
 // side navigation bar
+// Below the rail breakpoint the sidebar is an off-canvas drawer (ephemeral,
+// always starts closed); at or above it, the same button collapses the
+// sidebar to a persisted icon-only rail instead.
 function toggleSidebar() {
-  document.getElementById("side-nav").classList.toggle("toggle-active");
-  document.getElementById("main").classList.toggle("toggle-active");
-  document.getElementById("top-navbar").classList.toggle("toggle-active");
-  var manageWrap = document.querySelector(".manage-wrap");
-  if (manageWrap) manageWrap.classList.toggle("toggle-active");
+  if (window.matchMedia("(max-width: 1150px)").matches) {
+    document.getElementById("side-nav").classList.toggle("toggle-active");
+    document.getElementById("main").classList.toggle("toggle-active");
+    document.getElementById("top-navbar").classList.toggle("toggle-active");
+    var manageWrap = document.querySelector(".manage-wrap");
+    if (manageWrap) manageWrap.classList.toggle("toggle-active");
+  } else {
+    toggleSidebarRail();
+  }
+}
+
+function toggleSidebarRail() {
+  var collapsed = document.documentElement.classList.toggle("sidebar-rail");
+  try {
+    localStorage.setItem("dime-sidebar", collapsed ? "collapsed" : "expanded");
+  } catch (e) {}
 }
 
 // #################################

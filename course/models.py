@@ -21,8 +21,8 @@ YEARS = (
 )
 
 # LEVEL_COURSE = "Level course"
-BACHELOR_DEGREE = _("Bachelor")
-MASTER_DEGREE = _("Master")
+BACHELOR_DEGREE = "Bachelor"
+MASTER_DEGREE = "Master"
 
 LEVEL = (
     # (LEVEL_COURSE, "Level course"),
@@ -30,9 +30,9 @@ LEVEL = (
     (MASTER_DEGREE, _("Master Degree")),
 )
 
-FIRST = _("First")
-SECOND = _("Second")
-THIRD = _("Third")
+FIRST = "First"
+SECOND = "Second"
+THIRD = "Third"
 
 SEMESTER = (
     (FIRST, _("First")),
