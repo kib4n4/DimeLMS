@@ -44,6 +44,7 @@
                 </a>
 
                 <form action="" method="POST" enctype="multipart/form-data">{% csrf_token %}
+                    {{ form.institution|as_crispy_field }}
                     {{ form.excel_file|as_crispy_field }}
                     <input class="btn btn-primary mt-2" type="submit" value="{% trans 'Upload' %}">
                 </form>

@@ -17,6 +17,7 @@ from django_filters.views import FilterView
 
 from accounts.models import User, Student
 from core.models import Session, Semester, SiteConfiguration
+from core.institution import institution_scoped
 from result.models import TakenCourse
 from accounts.decorators import (
     student_required,
@@ -55,6 +56,11 @@ class ProgramFilterView(FilterView):
     filterset_class = ProgramFilter
     template_name = "course/program_list.html"
 
+    def get_queryset(self):
+        return institution_scoped(
+            Program.objects.select_related("institution"), self.request.user
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "Programs"
@@ -64,18 +70,27 @@ class ProgramFilterView(FilterView):
 @login_required
 @org_admin_required
 def program_add(request):
+    # Super Admin can arrive from an institution's page (…?institution=<pk>)
+    # to attach a program straight to it — preselect it, and send them back
+    # there afterwards.
+    from_institution = request.GET.get("institution") or request.POST.get(
+        "from_institution"
+    )
     if request.method == "POST":
-        form = ProgramForm(request.POST)
+        form = ProgramForm(request.POST, user=request.user)
         if form.is_valid():
-            form.save()
+            program = form.save()
             messages.success(
                 request, request.POST.get("title") + " program has been created."
             )
+            if from_institution and request.user.is_superuser:
+                return redirect("institution_detail", pk=program.institution_id)
             return redirect("programs")
         else:
             messages.error(request, "Correct the error(S) below.")
     else:
-        form = ProgramForm()
+        initial = {"institution": from_institution} if from_institution else None
+        form = ProgramForm(user=request.user, initial=initial)
 
     return render(
         request,
@@ -89,7 +104,9 @@ def program_add(request):
 
 @login_required
 def program_detail(request, pk):
-    program = Program.objects.get(pk=pk)
+    program = get_object_or_404(
+        institution_scoped(Program.objects.all(), request.user), pk=pk
+    )
     courses = Course.objects.filter(program_id=pk).order_by("-year")
     credits = Course.objects.aggregate(Sum("credit"))
 
@@ -113,10 +130,12 @@ def program_detail(request, pk):
 @login_required
 @org_admin_required
 def program_edit(request, pk):
-    program = Program.objects.get(pk=pk)
+    program = get_object_or_404(
+        institution_scoped(Program.objects.all(), request.user), pk=pk
+    )
 
     if request.method == "POST":
-        form = ProgramForm(request.POST, instance=program)
+        form = ProgramForm(request.POST, instance=program, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(
@@ -124,7 +143,7 @@ def program_edit(request, pk):
             )
             return redirect("programs")
     else:
-        form = ProgramForm(instance=program)
+        form = ProgramForm(instance=program, user=request.user)
 
     return render(
         request,
@@ -136,7 +155,9 @@ def program_edit(request, pk):
 @login_required
 @org_admin_required
 def program_delete(request, pk):
-    program = Program.objects.get(pk=pk)
+    program = get_object_or_404(
+        institution_scoped(Program.objects.all(), request.user), pk=pk
+    )
     title = program.title
     program.delete()
     messages.success(request, "Program " + title + " has been deleted.")
@@ -152,7 +173,12 @@ def program_delete(request, pk):
 # ########################################################
 @login_required
 def course_single(request, slug):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(
+        institution_scoped(
+            Course.objects.all(), request.user, field="program__institution"
+        ),
+        slug=slug,
+    )
     files = Upload.objects.filter(course__slug=slug)
     videos = UploadVideo.objects.filter(course__slug=slug)
     links = CourseLink.objects.filter(course__slug=slug)
@@ -178,9 +204,12 @@ def course_single(request, slug):
 @login_required
 @org_admin_required
 def course_add(request, pk):
+    program = get_object_or_404(
+        institution_scoped(Program.objects.all(), request.user), pk=pk
+    )
     users = User.objects.all()
     if request.method == "POST":
-        form = CourseAddForm(request.POST)
+        form = CourseAddForm(request.POST, user=request.user)
         course_name = request.POST.get("title")
         course_code = request.POST.get("code")
         if form.is_valid():
@@ -192,7 +221,7 @@ def course_add(request, pk):
         else:
             messages.error(request, "Correct the error(s) below.")
     else:
-        form = CourseAddForm(initial={"program": Program.objects.get(pk=pk)})
+        form = CourseAddForm(initial={"program": program}, user=request.user)
 
     return render(
         request,
@@ -209,9 +238,14 @@ def course_add(request, pk):
 @login_required
 @org_admin_required
 def course_edit(request, slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(
+            Course.objects.all(), request.user, field="program__institution"
+        ),
+        slug=slug,
+    )
     if request.method == "POST":
-        form = CourseAddForm(request.POST, instance=course)
+        form = CourseAddForm(request.POST, instance=course, user=request.user)
         course_name = request.POST.get("title")
         course_code = request.POST.get("code")
         if form.is_valid():
@@ -223,7 +257,7 @@ def course_edit(request, slug):
         else:
             messages.error(request, "Correct the error(s) below.")
     else:
-        form = CourseAddForm(instance=course)
+        form = CourseAddForm(instance=course, user=request.user)
 
     return render(
         request,
@@ -239,7 +273,12 @@ def course_edit(request, slug):
 @login_required
 @org_admin_required
 def course_delete(request, slug):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(
+        institution_scoped(
+            Course.objects.all(), request.user, field="program__institution"
+        ),
+        slug=slug,
+    )
     # course_name = course.title
     course.delete()
     messages.success(request, "Course " + course.title + " has been deleted.")
@@ -292,6 +331,13 @@ class CourseAllocationFilterView(FilterView):
     filterset_class = CourseAllocationFilter
     template_name = "course/course_allocation_view.html"
 
+    def get_queryset(self):
+        return institution_scoped(
+            CourseAllocation.objects.all(),
+            self.request.user,
+            field="lecturer__institution",
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "Course Allocations"
@@ -301,15 +347,24 @@ class CourseAllocationFilterView(FilterView):
 @login_required
 @org_admin_required
 def edit_allocated_course(request, pk):
-    allocated = get_object_or_404(CourseAllocation, pk=pk)
+    allocated = get_object_or_404(
+        institution_scoped(
+            CourseAllocation.objects.all(),
+            request.user,
+            field="lecturer__institution",
+        ),
+        pk=pk,
+    )
     if request.method == "POST":
-        form = EditCourseAllocationForm(request.POST, instance=allocated)
+        form = EditCourseAllocationForm(
+            request.POST, instance=allocated, user=request.user
+        )
         if form.is_valid():
             form.save()
             messages.success(request, "course assigned has been updated.")
             return redirect("course_allocation_view")
     else:
-        form = EditCourseAllocationForm(instance=allocated)
+        form = EditCourseAllocationForm(instance=allocated, user=request.user)
 
     return render(
         request,
@@ -321,7 +376,14 @@ def edit_allocated_course(request, pk):
 @login_required
 @org_admin_required
 def deallocate_course(request, pk):
-    course = CourseAllocation.objects.get(pk=pk)
+    course = get_object_or_404(
+        institution_scoped(
+            CourseAllocation.objects.all(),
+            request.user,
+            field="lecturer__institution",
+        ),
+        pk=pk,
+    )
     course.delete()
     messages.success(request, "successfully deallocate!")
     return redirect("course_allocation_view")
@@ -336,7 +398,10 @@ def deallocate_course(request, pk):
 @login_required
 @course_materials_write_required
 def handle_file_upload(request, slug):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     if request.method == "POST":
         form = UploadFormFile(request.POST, request.FILES, course=course)
         if form.is_valid():
@@ -360,7 +425,10 @@ def handle_file_upload(request, slug):
 @login_required
 @course_materials_write_required
 def handle_file_edit(request, slug, file_id):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     instance = Upload.objects.get(pk=file_id)
     if request.method == "POST":
         form = UploadFormFile(request.POST, request.FILES, instance=instance, course=course)
@@ -405,7 +473,10 @@ def document_single(request, slug, file_id):
     jumps straight into a module-card reading experience for its topics
     instead of one long page — see the auto-split block below.
     """
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     document = get_object_or_404(Upload, pk=file_id, course=course)
 
     if not document.viewer_kind:
@@ -502,7 +573,10 @@ def document_single(request, slug, file_id):
 @login_required
 @course_materials_write_required
 def handle_video_upload(request, slug):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     if request.method == "POST":
         form = UploadFormVideo(request.POST, request.FILES, course=course)
         if form.is_valid():
@@ -526,7 +600,10 @@ def handle_video_upload(request, slug):
 @login_required
 # @course_materials_write_required
 def handle_video_single(request, slug, video_slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     video = get_object_or_404(UploadVideo, slug=video_slug)
     return render(request, "upload/video_single.html", {"video": video})
 
@@ -534,7 +611,10 @@ def handle_video_single(request, slug, video_slug):
 @login_required
 @course_materials_write_required
 def handle_video_edit(request, slug, video_slug):
-    course = Course.objects.get(slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     instance = UploadVideo.objects.get(slug=video_slug)
     if request.method == "POST":
         form = UploadFormVideo(request.POST, request.FILES, instance=instance, course=course)
@@ -571,7 +651,10 @@ def handle_video_delete(request, slug, video_slug):
 @login_required
 @course_materials_write_required
 def handle_link_upload(request, slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     if request.method == "POST":
         form = UploadFormLink(request.POST, course=course)
         if form.is_valid():
@@ -594,7 +677,10 @@ def handle_link_upload(request, slug):
 
 @login_required
 def handle_link_single(request, slug, link_slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     link = get_object_or_404(CourseLink, slug=link_slug)
     return render(request, "upload/link_single.html", {"link": link})
 
@@ -602,7 +688,10 @@ def handle_link_single(request, slug, link_slug):
 @login_required
 @course_materials_write_required
 def handle_link_edit(request, slug, link_slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     instance = get_object_or_404(CourseLink, slug=link_slug)
     if request.method == "POST":
         form = UploadFormLink(request.POST, instance=instance, course=course)
@@ -647,7 +736,10 @@ def module_list(request, slug):
     course's overall completion; a facilitator/org admin/superuser sees
     duration + manage controls plus a link to the class-wide tracker.
     """
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     modules = course.modules.all()
 
     student = None
@@ -686,7 +778,10 @@ def module_list(request, slug):
 @login_required
 @course_materials_write_required
 def module_add(request, slug):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     if request.method == "POST":
         form = ModuleForm(request.POST, course=course)
         if form.is_valid():
@@ -722,7 +817,10 @@ def module_split_view(request, slug):
     any sub-headings (Heading 2, 3, ...) in between. See
     course.utils.split_docx_into_topics.
     """
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     if request.method == "POST":
         form = ModuleSplitForm(request.POST, request.FILES)
         if form.is_valid():
@@ -785,7 +883,10 @@ def module_split_view(request, slug):
 @login_required
 @course_materials_write_required
 def module_edit(request, slug, pk):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     instance = get_object_or_404(Module, pk=pk, course=course)
     if request.method == "POST":
         form = ModuleForm(request.POST, instance=instance, course=course)
@@ -805,7 +906,10 @@ def module_edit(request, slug, pk):
 @login_required
 @course_materials_write_required
 def module_delete(request, slug, pk):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     module = get_object_or_404(Module, pk=pk, course=course)
     title = module.title
     module.delete()
@@ -816,7 +920,10 @@ def module_delete(request, slug, pk):
 @login_required
 @courses_read_required
 def module_detail(request, slug, pk):
-    course = get_object_or_404(Course, slug=slug)
+    course = get_object_or_404(
+        institution_scoped(Course.objects.all(), request.user, field="program__institution"),
+        slug=slug,
+    )
     module = get_object_or_404(Module, pk=pk, course=course)
 
     student = None
@@ -920,7 +1027,12 @@ class CourseTrackerRosterView(ListView):
     context_object_name = "rows"
 
     def get_course(self):
-        return get_object_or_404(Course, slug=self.kwargs["slug"])
+        return get_object_or_404(
+            institution_scoped(
+                Course.objects.all(), self.request.user, field="program__institution"
+            ),
+            slug=self.kwargs["slug"],
+        )
 
     def get_queryset(self):
         course = self.get_course()
@@ -962,17 +1074,52 @@ def course_registration(request):
                 "Course registration is currently closed. Contact your administrator.",
             )
             return redirect("course_registration")
+
         student = Student.objects.get(student__pk=request.user.id)
-        ids = ()
-        data = request.POST.copy()
-        data.pop("csrfmiddlewaretoken", None)  # remove csrf_token
-        for key in data.keys():
-            ids = ids + (str(key),)
-        for s in range(0, len(ids)):
-            course = Course.objects.get(pk=ids[s])
-            obj = TakenCourse.objects.create(student=student, course=course)
-            obj.save()
-        messages.success(request, "Courses registered successfully!")
+        current_semester = Semester.objects.filter(is_current_semester=True).first()
+
+        # The page only ever lists courses matching the student's own
+        # program + level for the current semester — re-derive that same
+        # eligible set here rather than trusting whatever course IDs
+        # were actually posted, so a tampered request can't register a
+        # student for a course outside their program/level (or one no
+        # longer offered this semester).
+        eligible_by_id = {}
+        if current_semester:
+            eligible_courses = Course.objects.filter(
+                program__pk=student.program.id,
+                level=student.level,
+                semester=current_semester,
+            )
+            eligible_by_id = {str(course.pk): course for course in eligible_courses}
+
+        already_taken_ids = set(
+            TakenCourse.objects.filter(student=student).values_list("course_id", flat=True)
+        )
+
+        submitted_ids = [key for key in request.POST.keys() if key != "csrfmiddlewaretoken"]
+        registered_count = 0
+        rejected_count = 0
+        for course_id in submitted_ids:
+            course = eligible_by_id.get(course_id)
+            if not course or course.pk in already_taken_ids:
+                rejected_count += 1
+                continue
+            TakenCourse.objects.create(student=student, course=course)
+            registered_count += 1
+
+        if registered_count:
+            messages.success(
+                request, f"{registered_count} course(s) registered successfully!"
+            )
+        if rejected_count:
+            messages.warning(
+                request,
+                f"{rejected_count} selection(s) couldn't be registered — not "
+                "eligible for your program/level this semester, or already taken.",
+            )
+        if not registered_count and not rejected_count:
+            messages.error(request, "No courses were selected.")
         return redirect("course_registration")
     else:
         current_semester = Semester.objects.filter(is_current_semester=True).first()
@@ -1049,15 +1196,15 @@ def course_drop(request):
             )
             return redirect("course_registration")
         student = Student.objects.get(student__pk=request.user.id)
-        ids = ()
-        data = request.POST.copy()
-        data.pop("csrfmiddlewaretoken", None)  # remove csrf_token
-        for key in data.keys():
-            ids = ids + (str(key),)
-        for s in range(0, len(ids)):
-            course = Course.objects.get(pk=ids[s])
-            obj = TakenCourse.objects.get(student=student, course=course)
-            obj.delete()
+        submitted_ids = [
+            key
+            for key in request.POST.keys()
+            if key != "csrfmiddlewaretoken" and key.isdigit()
+        ]
+        # Scoped to this student's own TakenCourse rows, so this can only
+        # ever drop something they're actually registered for — a stale
+        # or tampered id is just skipped rather than raising a 500.
+        TakenCourse.objects.filter(student=student, course_id__in=submitted_ids).delete()
         messages.success(request, "Successfully Dropped!")
         return redirect("course_registration")
     return redirect("course_registration")

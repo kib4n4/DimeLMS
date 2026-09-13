@@ -2,6 +2,11 @@ pytz
 Pillow
 whitenoise
 
+# django-model-utils 4.3.1 imports pkg_resources, which setuptools removed in
+# v81. Pin below that until model-utils is upgraded (5.x drops pkg_resources
+# but changes InheritanceManager's layout, which breaks django-modeltranslation).
+setuptools<81
+
 django
 django-model-utils==4.3.1
 django-crispy-forms

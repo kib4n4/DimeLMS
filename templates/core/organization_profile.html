@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
+
+{% block content %}
+<style>
+    .org-profile { max-width: 100%; }
+    .org-profile-heading { font-weight: 700; font-size: 1.6rem; margin: 0; }
+    .org-profile-sub { color: #6c757d; font-size: .9rem; margin: .25rem 0 1.5rem; }
+    .org-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: .6rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+        overflow: hidden;
+    }
+    .org-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.15rem 1.5rem;
+        border-bottom: 1px solid #eef0f2;
+    }
+    .org-card-name { font-weight: 700; font-size: 1rem; color: #1f2937; }
+    .org-card-code { color: #8a94a6; font-size: .82rem; margin-top: .15rem; }
+    .org-pill {
+        flex: none;
+        font-size: .78rem;
+        font-weight: 600;
+        padding: .2rem .7rem;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        line-height: 1.4;
+    }
+    .org-pill.is-active { color: #1a9d6f; }
+    .org-pill.is-inactive { color: #9aa0a6; }
+    .org-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .95rem 1.5rem;
+        border-bottom: 1px solid #f1f3f5;
+    }
+    .org-row:last-child { border-bottom: 0; }
+    .org-row-label { color: #8a94a6; font-size: .9rem; }
+    .org-row-value { color: #1f2937; font-size: .9rem; text-align: right; word-break: break-word; }
+    .org-row-value.is-empty { color: #b6bcc4; }
+</style>
+
+<div class="org-profile">
+    <h1 class="org-profile-heading">{% trans 'Organization' %}</h1>
+    <p class="org-profile-sub">{% trans 'Your organization profile as mirrored from the LMS.' %}</p>
+
+    {% include 'snippets/messages.html' %}
+
+    <div class="org-card">
+        <div class="org-card-head">
+            <div>
+                <div class="org-card-name">{{ institution.name }}</div>
+                <div class="org-card-code">{% trans 'Code' %}: {{ institution.code|default:"—" }}</div>
+            </div>
+            {% if institution.is_active %}
+            <span class="org-pill is-active">{% trans 'Active' %}</span>
+            {% else %}
+            <span class="org-pill is-inactive">{% trans 'Inactive' %}</span>
+            {% endif %}
+        </div>
+
+        <div class="org-row">
+            <span class="org-row-label">{% trans 'Name' %}</span>
+            <span class="org-row-value">{{ institution.name }}</span>
+        </div>
+        <div class="org-row">
+            <span class="org-row-label">{% trans 'Code' %}</span>
+            <span class="org-row-value {% if not institution.code %}is-empty{% endif %}">{{ institution.code|default:"—" }}</span>
+        </div>
+        <div class="org-row">
+            <span class="org-row-label">{% trans 'Email' %}</span>
+            <span class="org-row-value {% if not institution.email %}is-empty{% endif %}">{{ institution.email|default:"—" }}</span>
+        </div>
+        <div class="org-row">
+            <span class="org-row-label">{% trans 'Phone' %}</span>
+            <span class="org-row-value {% if not institution.phone %}is-empty{% endif %}">{{ institution.phone|default:"—" }}</span>
+        </div>
+        <div class="org-row">
+            <span class="org-row-label">{% trans 'Contact' %}</span>
+            <span class="org-row-value {% if not institution.contact_name %}is-empty{% endif %}">{{ institution.contact_name|default:"—" }}</span>
+        </div>
+        <div class="org-row">
+            <span class="org-row-label">{% trans 'Active' %}</span>
+            <span class="org-row-value">{% if institution.is_active %}{% trans 'Yes' %}{% else %}{% trans 'No' %}{% endif %}</span>
+        </div>
+    </div>
+</div>
+{% endblock content %}

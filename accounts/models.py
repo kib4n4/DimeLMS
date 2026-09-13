@@ -7,6 +7,7 @@ from django.db.models import Q
 from PIL import Image
 
 from course.models import Program
+from core.models import Institution
 from .validators import ASCIIUsernameValidator
 
 
@@ -78,6 +79,19 @@ class User(AbstractUser):
             "Organization admin: read/write on facilitators, students, "
             "programs & courses, sessions, semesters, exams and course "
             "allocations — everything except superuser-only site settings."
+        ),
+    )
+    institution = models.ForeignKey(
+        Institution,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+        help_text=_(
+            "Which institution this account belongs to — org admins, "
+            "facilitators, and students only ever see and manage that "
+            "institution's data. Left blank for a superuser, who sees "
+            "across all institutions."
         ),
     )
     gender = models.CharField(max_length=1, choices=GENDERS, blank=True, null=True)

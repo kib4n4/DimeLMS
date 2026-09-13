@@ -24,6 +24,9 @@
                 <tr>
                     <th>#</th>
                     <th>{% trans 'Program Name' %}</th>
+                    {% if request.user.is_superuser %}
+                    <th>{% trans 'Institution' %}</th>
+                    {% endif %}
                     <th>{% trans 'Summary' %}</th>
                     {% if request.user.is_superuser or request.user.is_org_admin %}
                     <th>{% trans 'Action' %}</th>
@@ -39,6 +42,13 @@
                             {{ program.title}}
                         </a>
                     </td>
+                    {% if request.user.is_superuser %}
+                    <td>
+                        <a class="a-list" href="{% url 'institution_detail' pk=program.institution_id %}">
+                            {{ program.institution.name }}
+                        </a>
+                    </td>
+                    {% endif %}
                     <td>{{ program.summary }} </td>
                     {% if request.user.is_superuser or request.user.is_org_admin %}
                     <td>

@@ -1,8 +1,14 @@
+import random
+import string
+
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from django.urls import reverse
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
@@ -23,6 +29,52 @@ SEMESTER = (
     (SECOND, _("Second")),
     (THIRD, _("Third")),
 )
+
+
+class Institution(models.Model):
+    """
+    A tenant / organization boundary. Every Program belongs to exactly one
+    Institution (and every Course, through its Program); every non-super
+    User (org admin, facilitator, student) belongs to exactly one
+    Institution too. A superuser has no institution and sees across all
+    of them — everyone else's queries are scoped to their own.
+    """
+
+    name = models.CharField(max_length=200, unique=True)
+    # Short unique identifier for the organization, e.g. "DIME001". Nullable
+    # at the DB level so existing rows migrate cleanly (a data migration
+    # backfills them); required in the form for anything created since.
+    code = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    email = models.EmailField(_("contact email"), blank=True)
+    phone = models.CharField(_("contact phone"), max_length=30, blank=True)
+    contact_name = models.CharField(_("contact person"), max_length=100, blank=True)
+    slug = models.SlugField(blank=True, unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("institution_edit", kwargs={"pk": self.pk})
+
+
+def _unique_institution_slug(instance):
+    base_slug = slugify(instance.name)
+    slug = base_slug
+    while Institution.objects.filter(slug=slug).exclude(pk=instance.pk).exists():
+        suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
+        slug = f"{base_slug}-{suffix}"
+    return slug
+
+
+@receiver(pre_save, sender=Institution)
+def institution_pre_save_receiver(sender, instance, *args, **kwargs):
+    if not instance.slug:
+        instance.slug = _unique_institution_slug(instance)
 
 
 class NewsAndEventsQuerySet(models.query.QuerySet):

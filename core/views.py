@@ -2,10 +2,143 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from accounts.decorators import org_admin_required, courses_read_required
+from accounts.decorators import admin_required, org_admin_required, courses_read_required
 from accounts.models import User, Student
-from .forms import SessionForm, SemesterForm, NewsAndEventsForm
-from .models import NewsAndEvents, ActivityLog, Session, Semester, SiteConfiguration
+from .forms import SessionForm, SemesterForm, NewsAndEventsForm, InstitutionForm
+from .models import (
+    NewsAndEvents,
+    ActivityLog,
+    Session,
+    Semester,
+    SiteConfiguration,
+    Institution,
+)
+
+
+# ########################################################
+# Institutions — Super Admin only. This is the tenant boundary every org
+# admin, facilitator, and student is scoped to (see core.institution).
+# ########################################################
+@login_required
+@admin_required
+def institution_list_view(request):
+    institutions = Institution.objects.all()
+    return render(
+        request,
+        "core/institution_list.html",
+        {"title": "Institutions", "institutions": institutions},
+    )
+
+
+@login_required
+@admin_required
+def institution_detail_view(request, pk):
+    """Everything attached to one institution — its programs (each with
+    their courses) and its people — on a single page, with the controls to
+    attach a new program or course to it. Super Admin only."""
+    institution = get_object_or_404(Institution, pk=pk)
+    programs = list(
+        institution.programs.all().prefetch_related("course_set").order_by("title")
+    )
+    members = institution.members.all()
+    org_admins = list(members.filter(is_org_admin=True).order_by("first_name", "last_name"))
+    return render(
+        request,
+        "core/institution_detail.html",
+        {
+            "title": institution.name,
+            "institution": institution,
+            "programs": programs,
+            "org_admins": org_admins,
+            "course_count": sum(len(p.course_set.all()) for p in programs),
+            "org_admin_count": len(org_admins),
+            "lecturer_count": members.filter(is_lecturer=True).count(),
+            "student_count": members.filter(is_student=True).count(),
+        },
+    )
+
+
+@login_required
+@org_admin_required
+def organization_profile_view(request):
+    """An org admin's read-only view of their own organization's profile as
+    it stands in the LMS. A superuser isn't tied to one institution, so
+    send them to the full list instead."""
+    institution = request.user.institution
+    if institution is None:
+        if request.user.is_superuser:
+            return redirect("institution_list")
+        messages.info(request, "Your account isn't linked to an organization yet.")
+        return redirect("home")
+    return render(
+        request,
+        "core/organization_profile.html",
+        {"title": "Organization", "institution": institution},
+    )
+
+
+@login_required
+@admin_required
+def institution_add_view(request):
+    if request.method == "POST":
+        form = InstitutionForm(request.POST)
+        if form.is_valid():
+            institution = form.save()
+            messages.success(
+                request,
+                f'Institution "{institution.name}" has been created. '
+                "Add an org admin for it below to put it to use.",
+            )
+            return redirect("institution_detail", pk=institution.pk)
+        else:
+            messages.error(request, "Correct the error(s) below.")
+    else:
+        form = InstitutionForm()
+    return render(
+        request,
+        "core/institution_form.html",
+        {"title": "Add Institution", "form": form},
+    )
+
+
+@login_required
+@admin_required
+def institution_edit_view(request, pk):
+    institution = get_object_or_404(Institution, pk=pk)
+    if request.method == "POST":
+        form = InstitutionForm(request.POST, instance=institution)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, f'Institution "{institution.name}" has been updated.'
+            )
+            return redirect("institution_list")
+        else:
+            messages.error(request, "Correct the error(s) below.")
+    else:
+        form = InstitutionForm(instance=institution)
+    return render(
+        request,
+        "core/institution_form.html",
+        {"title": f"Edit — {institution.name}", "form": form},
+    )
+
+
+@login_required
+@admin_required
+def institution_delete_view(request, pk):
+    institution = get_object_or_404(Institution, pk=pk)
+    if institution.programs.exists() or institution.members.exists():
+        messages.error(
+            request,
+            f'"{institution.name}" still has programs or accounts attached — '
+            "move or remove those first.",
+        )
+        return redirect("institution_list")
+    name = institution.name
+    institution.delete()
+    messages.success(request, f'Institution "{name}" has been deleted.')
+    return redirect("institution_list")
 
 
 # ########################################################
