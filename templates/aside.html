@@ -66,7 +66,7 @@
 
 			{% if request.user.is_org_admin and not request.user.is_superuser %}
 			<li class="{% if request.path == orgp %}active{% endif %}">
-				<a href="{% url 'organization_profile' %}"><i class="fas fa-building"></i>{% trans 'Organization' %}</a>
+				<a href="{% url 'organization_profile' %}" data-tooltip="{% trans 'Organization' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-organization"></use></svg><span class="nav-label">{% trans 'Organization' %}</span></a>
 			</li>
 			{% endif %}
 

@@ -135,11 +135,16 @@ ASGI_APPLICATION = "config.asgi.application"
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 if DEBUG:
-    # Local/dev: sqlite file, persisted to a mounted volume at /app/data
+    # Local/dev: sqlite file, persisted to a mounted volume at /app/data in
+    # Docker (the named volume mount creates that directory for us). Running
+    # straight on a host instead, nothing creates "data/" first — sqlite
+    # can't create the db file in a missing directory, so ensure it exists.
+    _SQLITE_DIR = os.path.join(BASE_DIR, "data")
+    os.makedirs(_SQLITE_DIR, exist_ok=True)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(BASE_DIR, "data", "db.sqlite3"),
+            "NAME": os.path.join(_SQLITE_DIR, "db.sqlite3"),
         }
     }
 else:
