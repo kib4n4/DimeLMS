@@ -1,6 +1,7 @@
 from django.test import TestCase
 from accounts.filters import  LecturerFilter, StudentFilter
 from accounts.models import User, Student
+from core.models import Institution
 from course.models import Program
 
 class LecturerFilterTestCase(TestCase):
@@ -34,9 +35,10 @@ class LecturerFilterTestCase(TestCase):
 
 class StudentFilterTestCase(TestCase):
     def setUp(self):
-        program1 = Program.objects.create(title="Computer Science", summary="Program for computer science students")
-        program2 = Program.objects.create(title="Mathematics", summary="Program for mathematics students")
-        program3 = Program.objects.create(title="Computer Engineering", summary="Program for computer engineering students")
+        institution = Institution.objects.create(name="Test Institution")
+        program1 = Program.objects.create(title="Computer Science", summary="Program for computer science students", institution=institution)
+        program2 = Program.objects.create(title="Mathematics", summary="Program for mathematics students", institution=institution)
+        program3 = Program.objects.create(title="Computer Engineering", summary="Program for computer engineering students", institution=institution)
 
         Student.objects.create(student=User.objects.create(username="student1", first_name="John", last_name="Doe", email="john@example.com"), program=program1)
         Student.objects.create(student=User.objects.create(username="student2", first_name="Jane", last_name="Williams", email="jane@example.com"), program=program2)

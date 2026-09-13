@@ -84,7 +84,7 @@ def build_lecturer_bulk_upload_template():
     return wb
 
 
-def parse_lecturer_bulk_upload(uploaded_file):
+def parse_lecturer_bulk_upload(uploaded_file, institution=None):
     """
     Parse an uploaded .xlsx file of facilitators (columns: First Name, Last
     Name, Email, Phone, Address — matching the required fields on the
@@ -95,7 +95,8 @@ def parse_lecturer_bulk_upload(uploaded_file):
     imported. Valid rows are created immediately; a facilitator User is
     created with is_lecturer=True and no username/password — the
     post_save signal on User generates both and emails the credentials,
-    exactly as it does for the single "Add Facilitator" form.
+    exactly as it does for the single "Add Facilitator" form. `institution`
+    is assigned to every created account, same as the single form.
     """
     from .models import User  # deferred to avoid a circular import
 
@@ -172,6 +173,7 @@ def parse_lecturer_bulk_upload(uploaded_file):
             phone=phone,
             address=address,
             is_lecturer=True,
+            institution=institution,
         )
         created_users.append(user)
 
@@ -218,7 +220,7 @@ def build_student_bulk_upload_template():
     return wb
 
 
-def parse_student_bulk_upload(uploaded_file):
+def parse_student_bulk_upload(uploaded_file, institution=None):
     """
     Parse an uploaded .xlsx file of students (columns: First Name, Last
     Name, Email, Phone, Address, Gender, Level, Program — matching the
@@ -230,7 +232,9 @@ def parse_student_bulk_upload(uploaded_file):
     is_student=True (no username/password — the post_save signal
     generates and emails both, same as the single "Add Student" form),
     plus the linked Student profile (level + program) the User model
-    alone doesn't carry.
+    alone doesn't carry. `institution` is assigned to every created
+    account, and the named Program must belong to that same institution
+    (matched by name is otherwise ambiguous across institutions).
     """
     from .models import User, Student  # deferred to avoid a circular import
     from course.models import Program
@@ -323,7 +327,10 @@ def parse_student_bulk_upload(uploaded_file):
             })
             continue
 
-        program = Program.objects.filter(title__iexact=program_input).first()
+        program_qs = Program.objects.filter(title__iexact=program_input)
+        if institution is not None:
+            program_qs = program_qs.filter(institution=institution)
+        program = program_qs.first()
         if not program:
             row_errors.append({
                 "row": row_number,
@@ -339,6 +346,7 @@ def parse_student_bulk_upload(uploaded_file):
             address=address,
             gender=gender,
             is_student=True,
+            institution=institution,
         )
         Student.objects.create(student=user, level=level, program=program)
         created_users.append(user)

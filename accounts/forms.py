@@ -8,6 +8,7 @@ from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from course.models import Program
+from core.models import Institution
 from .models import User, Student, Parent, RELATION_SHIP, LEVEL, GENDERS
 
 
@@ -153,8 +154,33 @@ class StaffAddForm(UserCreationForm):
         required=False,
     )
 
+    institution = forms.ModelChoiceField(
+        queryset=Institution.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
     class Meta(UserCreationForm.Meta):
         model = User
+
+    def __init__(self, *args, creator=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.creator = creator
+        if creator and not creator.is_superuser:
+            # An org admin's new accounts always belong to their own
+            # institution — lock the field rather than let them pick.
+            self.fields["institution"].initial = creator.institution
+            self.fields["institution"].disabled = True
+            self.fields["institution"].widget = forms.HiddenInput()
+        else:
+            # A superuser has no institution of their own to inherit —
+            # they must pick one explicitly.
+            self.fields["institution"].required = True
+
+    def _institution_for_save(self):
+        return self.cleaned_data.get("institution") or (
+            self.creator.institution if self.creator else None
+        )
 
     @transaction.atomic()
     def save(self, commit=True):
@@ -165,6 +191,7 @@ class StaffAddForm(UserCreationForm):
         user.phone = self.cleaned_data.get("phone")
         user.address = self.cleaned_data.get("address")
         user.email = self.cleaned_data.get("email")
+        user.institution = self._institution_for_save()
 
         if commit:
             user.save()
@@ -185,6 +212,7 @@ class OrgAdminAddForm(StaffAddForm):
         user.phone = self.cleaned_data.get("phone")
         user.address = self.cleaned_data.get("address")
         user.email = self.cleaned_data.get("email")
+        user.institution = self._institution_for_save()
 
         if commit:
             user.save()
@@ -203,6 +231,26 @@ class LecturerBulkUploadForm(forms.Form):
         ),
         help_text="Required columns: First Name, Last Name, Email, Phone, Address.",
     )
+    institution = forms.ModelChoiceField(
+        queryset=Institution.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    def __init__(self, *args, creator=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.creator = creator
+        if creator and not creator.is_superuser:
+            self.fields["institution"].initial = creator.institution
+            self.fields["institution"].disabled = True
+            self.fields["institution"].widget = forms.HiddenInput()
+        else:
+            self.fields["institution"].required = True
+
+    def institution_for_save(self):
+        return self.cleaned_data.get("institution") or (
+            self.creator.institution if self.creator else None
+        )
 
     def clean_excel_file(self):
         excel_file = self.cleaned_data["excel_file"]
@@ -324,6 +372,12 @@ class StudentAddForm(UserCreationForm):
         required=False,
     )
 
+    institution = forms.ModelChoiceField(
+        queryset=Institution.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
     # def validate_email(self):
     #     email = self.cleaned_data['email']
     #     if User.objects.filter(email__iexact=email, is_active=True).exists():
@@ -331,6 +385,22 @@ class StudentAddForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = User
+
+    def __init__(self, *args, creator=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.creator = creator
+        if creator and not creator.is_superuser:
+            # An org admin's new students always belong to their own
+            # institution — lock the field, and only offer that
+            # institution's programs.
+            self.fields["institution"].initial = creator.institution
+            self.fields["institution"].disabled = True
+            self.fields["institution"].widget = forms.HiddenInput()
+            self.fields["program"].queryset = Program.objects.filter(
+                institution=creator.institution
+            )
+        else:
+            self.fields["institution"].required = True
 
     @transaction.atomic()
     def save(self, commit=True):
@@ -343,6 +413,9 @@ class StudentAddForm(UserCreationForm):
         user.phone = self.cleaned_data.get("phone")
         user.address = self.cleaned_data.get("address")
         user.email = self.cleaned_data.get("email")
+        user.institution = self.cleaned_data.get("institution") or (
+            self.creator.institution if self.creator else None
+        )
 
         if commit:
             user.save()
@@ -366,6 +439,26 @@ class StudentBulkUploadForm(forms.Form):
         ),
         help_text="Required columns: First Name, Last Name, Email, Phone, Address, Gender, Level, Program.",
     )
+    institution = forms.ModelChoiceField(
+        queryset=Institution.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    def __init__(self, *args, creator=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.creator = creator
+        if creator and not creator.is_superuser:
+            self.fields["institution"].initial = creator.institution
+            self.fields["institution"].disabled = True
+            self.fields["institution"].widget = forms.HiddenInput()
+        else:
+            self.fields["institution"].required = True
+
+    def institution_for_save(self):
+        return self.cleaned_data.get("institution") or (
+            self.creator.institution if self.creator else None
+        )
 
     def clean_excel_file(self):
         excel_file = self.cleaned_data["excel_file"]
@@ -459,6 +552,13 @@ class ProgramUpdateForm(UserChangeForm):
     class Meta:
         model = Student
         fields = ["program"]
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user and not user.is_superuser:
+            self.fields["program"].queryset = Program.objects.filter(
+                institution=user.institution
+            )
 
 
 class EmailValidationOnForgotPassword(PasswordResetForm):

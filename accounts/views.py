@@ -10,6 +10,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.forms import PasswordChangeForm
 from django_filters.views import FilterView
 from core.models import Session, Semester, SiteConfiguration
+from core.institution import institution_scoped
 from course.models import Course
 from result.models import TakenCourse
 from .decorators import admin_required, org_admin_required, students_read_required
@@ -310,7 +311,7 @@ def change_password(request):
 @org_admin_required
 def staff_add_view(request):
     if request.method == "POST":
-        form = StaffAddForm(request.POST)
+        form = StaffAddForm(request.POST, creator=request.user)
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
         email = request.POST.get("email")
@@ -330,7 +331,7 @@ def staff_add_view(request):
             )
             return redirect("lecturer_list")
     else:
-        form = StaffAddForm()
+        form = StaffAddForm(creator=request.user)
 
     context = {
         "title": "Facilitator Add",
@@ -347,10 +348,10 @@ def lecturer_bulk_upload_view(request):
     created_users = []
 
     if request.method == "POST":
-        form = LecturerBulkUploadForm(request.POST, request.FILES)
+        form = LecturerBulkUploadForm(request.POST, request.FILES, creator=request.user)
         if form.is_valid():
             created_users, row_errors = parse_lecturer_bulk_upload(
-                form.cleaned_data["excel_file"]
+                form.cleaned_data["excel_file"], institution=form.institution_for_save()
             )
             if created_users:
                 messages.success(
@@ -363,9 +364,9 @@ def lecturer_bulk_upload_view(request):
                     request,
                     f"{len(row_errors)} row(s) could not be imported — see details below.",
                 )
-            form = LecturerBulkUploadForm()
+            form = LecturerBulkUploadForm(creator=request.user)
     else:
-        form = LecturerBulkUploadForm()
+        form = LecturerBulkUploadForm(creator=request.user)
 
     context = {
         "title": "Bulk Upload Facilitators",
@@ -393,7 +394,9 @@ def lecturer_bulk_upload_template(request):
 @login_required
 @org_admin_required
 def edit_staff(request, pk):
-    instance = get_object_or_404(User, is_lecturer=True, pk=pk)
+    instance = get_object_or_404(
+        institution_scoped(User.objects.filter(is_lecturer=True), request.user), pk=pk
+    )
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=instance)
         full_name = instance.get_full_name
@@ -419,9 +422,13 @@ def edit_staff(request, pk):
 @method_decorator([login_required, org_admin_required], name="dispatch")
 class LecturerFilterView(FilterView):
     filterset_class = LecturerFilter
-    queryset = User.objects.filter(is_lecturer=True)
     template_name = "accounts/lecturer_list.html"
     paginate_by = 10  # if pagination is desired
+
+    def get_queryset(self):
+        return institution_scoped(
+            User.objects.filter(is_lecturer=True), self.request.user
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -433,7 +440,9 @@ class LecturerFilterView(FilterView):
 @login_required
 @org_admin_required
 def render_lecturer_pdf_list(request):
-    lecturers = User.objects.filter(is_lecturer=True)
+    lecturers = institution_scoped(
+        User.objects.filter(is_lecturer=True), request.user
+    )
     template_path = "pdf/lecturer_list.html"
     context = {"lecturers": lecturers}
     response = HttpResponse(
@@ -462,7 +471,9 @@ def render_lecturer_pdf_list(request):
 @login_required
 @org_admin_required
 def delete_staff(request, pk):
-    lecturer = get_object_or_404(User, pk=pk)
+    lecturer = get_object_or_404(
+        institution_scoped(User.objects.filter(is_lecturer=True), request.user), pk=pk
+    )
     full_name = lecturer.get_full_name
     lecturer.delete()
     messages.success(request, "Facilitator " + full_name + " has been deleted.")
@@ -494,14 +505,20 @@ class OrgAdminFilterView(FilterView):
 @login_required
 @admin_required
 def org_admin_add_view(request):
+    # Super Admin can arrive from an institution's page (…?institution=<pk>)
+    # to create that org's first admin straight away — preselect it, and
+    # send them back there afterwards instead of the global org admin list.
+    from_institution = request.GET.get("institution") or request.POST.get(
+        "from_institution"
+    )
     if request.method == "POST":
-        form = OrgAdminAddForm(request.POST)
+        form = OrgAdminAddForm(request.POST, creator=request.user)
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
         email = request.POST.get("email")
 
         if form.is_valid():
-            form.save()
+            org_admin = form.save()
             messages.success(
                 request,
                 "Account for org admin "
@@ -512,11 +529,14 @@ def org_admin_add_view(request):
                 + email
                 + " within a minute.",
             )
+            if from_institution and org_admin.institution_id:
+                return redirect("institution_detail", pk=org_admin.institution_id)
             return redirect("org_admin_list")
         else:
             messages.error(request, "Correct the error(s) below.")
     else:
-        form = OrgAdminAddForm()
+        initial = {"institution": from_institution} if from_institution else None
+        form = OrgAdminAddForm(creator=request.user, initial=initial)
 
     return render(
         request,
@@ -573,7 +593,7 @@ def delete_org_admin(request, pk):
 @org_admin_required
 def student_add_view(request):
     if request.method == "POST":
-        form = StudentAddForm(request.POST)
+        form = StudentAddForm(request.POST, creator=request.user)
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
         email = request.POST.get("email")
@@ -593,7 +613,7 @@ def student_add_view(request):
         else:
             messages.error(request, "Correct the error(s) below.")
     else:
-        form = StudentAddForm()
+        form = StudentAddForm(creator=request.user)
 
     return render(
         request,
@@ -609,10 +629,10 @@ def student_bulk_upload_view(request):
     created_users = []
 
     if request.method == "POST":
-        form = StudentBulkUploadForm(request.POST, request.FILES)
+        form = StudentBulkUploadForm(request.POST, request.FILES, creator=request.user)
         if form.is_valid():
             created_users, row_errors = parse_student_bulk_upload(
-                form.cleaned_data["excel_file"]
+                form.cleaned_data["excel_file"], institution=form.institution_for_save()
             )
             if created_users:
                 messages.success(
@@ -625,9 +645,9 @@ def student_bulk_upload_view(request):
                     request,
                     f"{len(row_errors)} row(s) could not be imported — see details below.",
                 )
-            form = StudentBulkUploadForm()
+            form = StudentBulkUploadForm(creator=request.user)
     else:
-        form = StudentBulkUploadForm()
+        form = StudentBulkUploadForm(creator=request.user)
 
     context = {
         "title": "Bulk Upload Students",
@@ -656,7 +676,9 @@ def student_bulk_upload_template(request):
 @org_admin_required
 def edit_student(request, pk):
     # instance = User.objects.get(pk=pk)
-    instance = get_object_or_404(User, is_student=True, pk=pk)
+    instance = get_object_or_404(
+        institution_scoped(User.objects.filter(is_student=True), request.user), pk=pk
+    )
     if request.method == "POST":
         form = ProfileUpdateForm(request.POST, request.FILES, instance=instance)
         full_name = instance.get_full_name
@@ -681,10 +703,14 @@ def edit_student(request, pk):
 
 @method_decorator([login_required, students_read_required], name="dispatch")
 class StudentListView(FilterView):
-    queryset = Student.objects.all()
     filterset_class = StudentFilter
     template_name = "accounts/student_list.html"
     paginate_by = 10
+
+    def get_queryset(self):
+        return institution_scoped(
+            Student.objects.all(), self.request.user, field="student__institution"
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -696,7 +722,9 @@ class StudentListView(FilterView):
 @login_required
 @students_read_required
 def render_student_pdf_list(request):
-    students = Student.objects.all()
+    students = institution_scoped(
+        Student.objects.all(), request.user, field="student__institution"
+    )
     template_path = "pdf/student_list.html"
     context = {"students": students}
     response = HttpResponse(
@@ -717,7 +745,12 @@ def render_student_pdf_list(request):
 @login_required
 @org_admin_required
 def delete_student(request, pk):
-    student = get_object_or_404(Student, pk=pk)
+    student = get_object_or_404(
+        institution_scoped(
+            Student.objects.all(), request.user, field="student__institution"
+        ),
+        pk=pk,
+    )
     # full_name = student.user.get_full_name
     student.delete()
     messages.success(request, "Student has been deleted.")
@@ -728,10 +761,19 @@ def delete_student(request, pk):
 @org_admin_required
 def edit_student_program(request, pk):
 
-    instance = get_object_or_404(Student, student_id=pk)
-    user = get_object_or_404(User, pk=pk)
+    instance = get_object_or_404(
+        institution_scoped(
+            Student.objects.all(), request.user, field="student__institution"
+        ),
+        student_id=pk,
+    )
+    user = get_object_or_404(
+        institution_scoped(User.objects.filter(is_student=True), request.user), pk=pk
+    )
     if request.method == "POST":
-        form = ProgramUpdateForm(request.POST, request.FILES, instance=instance)
+        form = ProgramUpdateForm(
+            request.POST, request.FILES, instance=instance, user=request.user
+        )
         full_name = user.get_full_name
         if form.is_valid():
             form.save()
@@ -743,7 +785,7 @@ def edit_student_program(request, pk):
         else:
             messages.error(request, "Please correct the error(s) below.")
     else:
-        form = ProgramUpdateForm(instance=instance)
+        form = ProgramUpdateForm(instance=instance, user=request.user)
     return render(
         request,
         "accounts/edit_student_program.html",

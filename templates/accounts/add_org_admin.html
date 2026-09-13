@@ -19,12 +19,16 @@
 {% include 'snippets/messages.html' %}
 
 <form action="" method="POST">{% csrf_token %}
+    {% if request.GET.institution %}
+    <input type="hidden" name="from_institution" value="{{ request.GET.institution }}">
+    {% endif %}
     <div class="row mb-3">
 
         <div class="col-md-6">
             <div class="card">
                 <p class="form-title">{% trans 'Personal Info' %}</p>
                 <div class="p-2">
+                    {{ form.institution|as_crispy_field }}
                     {{ form.first_name|as_crispy_field }}
                     {{ form.last_name|as_crispy_field }}
                     {{ form.email|as_crispy_field }}

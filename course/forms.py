@@ -17,10 +17,18 @@ class ProgramForm(forms.ModelForm):
         model = Program
         fields = "__all__"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["title"].widget.attrs.update({"class": "form-control"})
         self.fields["summary"].widget.attrs.update({"class": "form-control"})
+        if user and not user.is_superuser:
+            # An org admin only ever creates/edits programs within their
+            # own institution — lock the field rather than let them pick.
+            self.fields["institution"].initial = user.institution
+            self.fields["institution"].disabled = True
+            self.fields["institution"].widget = forms.HiddenInput()
+        else:
+            self.fields["institution"].widget.attrs.update({"class": "form-control"})
 
 
 class SemesterModelChoiceField(forms.ModelChoiceField):
@@ -43,7 +51,7 @@ class CourseAddForm(forms.ModelForm):
         model = Course
         fields = "__all__"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["title"].widget.attrs.update({"class": "form-control"})
         self.fields["code"].widget.attrs.update({"class": "form-control"})
@@ -51,6 +59,13 @@ class CourseAddForm(forms.ModelForm):
         self.fields["credit"].widget.attrs.update({"class": "form-control"})
         self.fields["summary"].widget.attrs.update({"class": "form-control"})
         self.fields["program"].widget.attrs.update({"class": "form-control"})
+        if user and not user.is_superuser:
+            # A course's institution is whatever its program's is — only
+            # offer programs from the org admin's own institution, so a
+            # course can never end up under another institution's program.
+            self.fields["program"].queryset = Program.objects.filter(
+                institution=user.institution
+            )
         self.fields["level"].widget.attrs.update({"class": "form-control"})
         self.fields["year"].widget.attrs.update({"class": "form-control"})
         self.fields["semester"].widget.attrs.update({"class": "form-control"})
@@ -78,7 +93,15 @@ class CourseAllocationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
         super(CourseAllocationForm, self).__init__(*args, **kwargs)
-        self.fields["lecturer"].queryset = User.objects.filter(is_lecturer=True)
+        lecturers = User.objects.filter(is_lecturer=True)
+        courses = Course.objects.all().order_by("level")
+        if user and not user.is_superuser:
+            # An org admin can only allocate their own institution's
+            # facilitators to their own institution's courses.
+            lecturers = lecturers.filter(institution=user.institution)
+            courses = courses.filter(program__institution=user.institution)
+        self.fields["lecturer"].queryset = lecturers
+        self.fields["courses"].queryset = courses
 
 
 class EditCourseAllocationForm(forms.ModelForm):
@@ -97,10 +120,15 @@ class EditCourseAllocationForm(forms.ModelForm):
         model = CourseAllocation
         fields = ["lecturer", "courses"]
 
-    def __init__(self, *args, **kwargs):
-        #    user = kwargs.pop('user')
+    def __init__(self, *args, user=None, **kwargs):
         super(EditCourseAllocationForm, self).__init__(*args, **kwargs)
-        self.fields["lecturer"].queryset = User.objects.filter(is_lecturer=True)
+        lecturers = User.objects.filter(is_lecturer=True)
+        courses = Course.objects.all().order_by("level")
+        if user and not user.is_superuser:
+            lecturers = lecturers.filter(institution=user.institution)
+            courses = courses.filter(program__institution=user.institution)
+        self.fields["lecturer"].queryset = lecturers
+        self.fields["courses"].queryset = courses
 
 
 # Add/edit a module (lesson) within a course
