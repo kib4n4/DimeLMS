@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 # project import
 from .utils import *
-from core.models import ActivityLog
+from core.models import ActivityLog, Institution
 
 YEARS = (
     (1, "1"),
@@ -70,10 +70,18 @@ class ProgramManager(models.Manager):
 
 
 class Program(models.Model):
-    title = models.CharField(max_length=150, unique=True)
+    institution = models.ForeignKey(
+        Institution,
+        on_delete=models.CASCADE,
+        related_name="programs",
+    )
+    title = models.CharField(max_length=150)
     summary = models.TextField(null=True, blank=True)
 
     objects = ProgramManager()
+
+    class Meta:
+        unique_together = ("institution", "title")
 
     def __str__(self):
         return self.title

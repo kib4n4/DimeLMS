@@ -18,6 +18,22 @@
 <br>
 {% include 'snippets/messages.html' %}
 
+{% if request.user.is_superuser %}
+<div class="admin-panel-section">
+    <p class="admin-section-label">{% trans 'Organizations' %}</p>
+    <div class="admin-panel-grid">
+        <a href="{% url 'institution_list' %}" class="admin-card">
+            <span class="admin-card-icon"><i class="fas fa-building"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Institutions' %}</span>
+                <span class="admin-card-desc">{% trans 'Create, update and remove institutions — each is a separate organization with its own programs, courses, facilitators and students.' %}</span>
+            </span>
+            <i class="fas fa-chevron-right admin-card-chevron"></i>
+        </a>
+    </div>
+</div>
+{% endif %}
+
 <div class="admin-panel-section">
     <p class="admin-section-label">{% trans 'People' %}</p>
     <div class="admin-panel-grid">

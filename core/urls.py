@@ -15,6 +15,12 @@ from .views import (
     semester_delete_view,
     dashboard_view,
     toggle_course_registration,
+    organization_profile_view,
+    institution_list_view,
+    institution_detail_view,
+    institution_add_view,
+    institution_edit_view,
+    institution_delete_view,
 )
 
 
@@ -25,6 +31,18 @@ urlpatterns = [
         "settings/toggle-course-registration/",
         toggle_course_registration,
         name="toggle_course_registration",
+    ),
+    path("organization/", organization_profile_view, name="organization_profile"),
+    path("institutions/", institution_list_view, name="institution_list"),
+    path("institutions/add/", institution_add_view, name="institution_add"),
+    path("institutions/<int:pk>/", institution_detail_view, name="institution_detail"),
+    path(
+        "institutions/<int:pk>/edit/", institution_edit_view, name="institution_edit"
+    ),
+    path(
+        "institutions/<int:pk>/delete/",
+        institution_delete_view,
+        name="institution_delete",
     ),
     path("add_item/", post_add, name="add_item"),
     path("item/<int:pk>/edit/", edit_post, name="edit_post"),

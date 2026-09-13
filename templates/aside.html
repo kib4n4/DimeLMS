@@ -45,7 +45,7 @@
 		{% url 'add_score' as ascore %} {% url 'grade_results' as vr %}{% url 'ass_results' as ar %}
 		{% url 'course_registration' as cr %} {% url 'edit_profile' as ep %} {% url 'change_password' as cp %}
 		{% url 'quiz_progress' as qpr %} {% url 'quiz_marking' as qce %} {% url 'user_course_list' as ucl %}
-		{% url 'admin_panel' as admin_p %}
+		{% url 'admin_panel' as admin_p %} {% url 'organization_profile' as orgp %}
 		
 
 
@@ -63,6 +63,12 @@
 			<li class="{% if request.path == prof %}active{% endif %}">
 				<a href="{% url 'profile' %}" data-tooltip="{% trans 'Profile' %}"><svg class="nav-icon" aria-hidden="true"><use href="#icon-profile"></use></svg><span class="nav-label">{% trans 'Profile' %}</span></a>
 			</li>
+
+			{% if request.user.is_org_admin and not request.user.is_superuser %}
+			<li class="{% if request.path == orgp %}active{% endif %}">
+				<a href="{% url 'organization_profile' %}"><i class="fas fa-building"></i>{% trans 'Organization' %}</a>
+			</li>
+			{% endif %}
 
 			{% if request.user.is_superuser or request.user.is_org_admin %}
 			<li class="{% if request.path == admin_p %}active{% endif %}">
