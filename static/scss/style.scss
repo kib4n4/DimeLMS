@@ -826,6 +826,78 @@ a:hover .empty-state-cta {
   }
 }
 
+// Account dropdown (navbar avatar menu) — previously a bare centered
+// avatar + "Last login" caption with no name or role, plus a generic
+// Bootstrap .btn-secondary sign-out button unrelated to the rest of the
+// button system.
+.account-menu {
+  min-width: 15.5rem;
+  padding: 0;
+  overflow: hidden;
+}
+.account-menu-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  margin-bottom: var(--space-2);
+  background: linear-gradient(180deg, var(--brand-50), transparent);
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: center;
+
+  .avatar {
+    margin-bottom: var(--space-2);
+  }
+}
+.account-menu-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+.account-menu-role {
+  display: inline-flex;
+  margin-top: 2px;
+  padding: 0.15em 0.6em;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+.account-menu-lastlogin {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.account-menu-divider {
+  height: 1px;
+  margin: var(--space-2) var(--space-3);
+  background: var(--border-subtle);
+}
+.account-menu-signout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--space-2) var(--space-3) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: rgba(220, 53, 69, 0.08);
+  color: #dc3545;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(220, 53, 69, 0.15);
+    outline: none;
+  }
+}
+
 @keyframes grow-top {
   0% {
     transform: scale(0.8);
