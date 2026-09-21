@@ -129,10 +129,22 @@
     {% if module.content %}
     <div class="reader-card">
         <h3>{{ module.title }}</h3>
+        <div id="read-aloud-controls" class="d-none mb-4">
+            <button type="button" id="read-aloud-play" class="btn btn-sm btn-primary">
+                <i class="fas fa-volume-up me-1"></i><span>{% trans 'Listen' %}</span>
+            </button>
+            <button type="button" id="read-aloud-pause" class="btn btn-sm btn-light d-none">
+                <i class="fas fa-pause me-1"></i><span>{% trans 'Pause' %}</span>
+            </button>
+            <button type="button" id="read-aloud-stop" class="btn btn-sm btn-light d-none">
+                <i class="fas fa-stop me-1"></i><span>{% trans 'Stop' %}</span>
+            </button>
+        </div>
         <div class="reader-card-body">
             {{ module.content|linebreaks }}
         </div>
     </div>
+    {{ module.content|json_script:"module-content-data" }}
     {% endif %}
 
     {% if can_track %}
@@ -272,6 +284,98 @@
 {% endblock content %}
 
 {% block js %}
+{% if module.content %}
+<script>
+(function () {
+    "use strict";
+    if (!("speechSynthesis" in window)) return;
+
+    var dataEl = document.getElementById("module-content-data");
+    var controls = document.getElementById("read-aloud-controls");
+    var playBtn = document.getElementById("read-aloud-play");
+    var pauseBtn = document.getElementById("read-aloud-pause");
+    var stopBtn = document.getElementById("read-aloud-stop");
+    if (!dataEl || !controls || !playBtn || !pauseBtn || !stopBtn) return;
+
+    var text = JSON.parse(dataEl.textContent);
+    var utterance = null;
+    var preferredVoiceName = "{{ site_config.read_aloud_voice_name|escapejs }}";
+    var preferredVoiceLang = "{{ site_config.read_aloud_voice_lang|escapejs }}";
+
+    function pickVoice() {
+        var voices = speechSynthesis.getVoices();
+        if (!voices.length) return null;
+        if (preferredVoiceName) {
+            var exact = voices.find(function (v) { return v.name === preferredVoiceName; });
+            if (exact) return exact;
+        }
+        if (preferredVoiceLang) {
+            var byLang = voices.find(function (v) {
+                return v.lang.toLowerCase().indexOf(preferredVoiceLang.toLowerCase()) === 0;
+            });
+            if (byLang) return byLang;
+        }
+        return null;
+    }
+
+    function showIdle() {
+        playBtn.classList.remove("d-none");
+        pauseBtn.classList.add("d-none");
+        stopBtn.classList.add("d-none");
+        playBtn.innerHTML = '<i class="fas fa-volume-up me-1"></i><span>{% trans "Listen" %}</span>';
+    }
+
+    function showPlaying() {
+        playBtn.classList.add("d-none");
+        pauseBtn.classList.remove("d-none");
+        stopBtn.classList.remove("d-none");
+    }
+
+    function showPaused() {
+        playBtn.classList.remove("d-none");
+        pauseBtn.classList.add("d-none");
+        stopBtn.classList.remove("d-none");
+        playBtn.innerHTML = '<i class="fas fa-play me-1"></i><span>{% trans "Resume" %}</span>';
+    }
+
+    controls.classList.remove("d-none");
+
+    playBtn.addEventListener("click", function () {
+        if (speechSynthesis.paused && utterance) {
+            speechSynthesis.resume();
+        } else {
+            speechSynthesis.cancel();
+            utterance = new SpeechSynthesisUtterance(text);
+            var voice = pickVoice();
+            if (voice) {
+                utterance.voice = voice;
+                utterance.lang = voice.lang;
+            } else {
+                utterance.lang = "{{ LANGUAGE_CODE|default:'en' }}";
+            }
+            utterance.onend = showIdle;
+            utterance.onerror = showIdle;
+            speechSynthesis.speak(utterance);
+        }
+        showPlaying();
+    });
+
+    pauseBtn.addEventListener("click", function () {
+        speechSynthesis.pause();
+        showPaused();
+    });
+
+    stopBtn.addEventListener("click", function () {
+        speechSynthesis.cancel();
+        showIdle();
+    });
+
+    window.addEventListener("pagehide", function () {
+        speechSynthesis.cancel();
+    });
+})();
+</script>
+{% endif %}
 {% if can_track %}
 <script>
 (function () {

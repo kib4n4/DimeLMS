@@ -161,6 +161,18 @@ def toggle_course_registration(request):
     return redirect("admin_panel")
 
 
+@login_required
+@org_admin_required
+def set_read_aloud_voice(request):
+    if request.method == "POST":
+        config = SiteConfiguration.get_solo()
+        config.read_aloud_voice_name = request.POST.get("voice_name", "").strip()
+        config.read_aloud_voice_lang = request.POST.get("voice_lang", "").strip()
+        config.save()
+        messages.success(request, "Default read-aloud voice has been updated.")
+    return redirect("admin_panel")
+
+
 # ########################################################
 # News & Events
 # ########################################################
