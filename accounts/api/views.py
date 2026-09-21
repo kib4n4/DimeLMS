@@ -12,7 +12,7 @@ class UserListAPIView(generics.ListAPIView):
         queryset = get_user_model().objects.all()
         query = self.request.GET.get("q")
         if query is not None:
-            queryset = queryset.filter(username__iexact=q)
+            queryset = queryset.filter(username__iexact=query)
         return queryset
 
 
