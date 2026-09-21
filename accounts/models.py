@@ -131,6 +131,8 @@ class User(AbstractUser):
             role = _("Facilitator")
         elif self.is_parent:
             role = _("Parent")
+        else:
+            role = _("User")
 
         return role
 
