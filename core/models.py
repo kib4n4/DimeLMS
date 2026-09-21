@@ -174,6 +174,27 @@ class SiteConfiguration(models.Model):
         default=True,
         help_text=_("When off, students can't add or drop courses themselves."),
     )
+    read_aloud_voice_name = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text=_(
+            "The exact browser voice name (from the Admin Panel's voice picker) "
+            "to prefer for the module read-aloud feature. Voices are local to "
+            "each visitor's browser, so this is only used if that visitor's "
+            "browser happens to have a voice with this exact name — otherwise "
+            "read_aloud_voice_lang is used as a fallback."
+        ),
+    )
+    read_aloud_voice_lang = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text=_(
+            "BCP-47 language tag (e.g. 'en-US') of the preferred read-aloud "
+            "voice, used as a fallback when a visitor's browser doesn't have "
+            "the exact voice named above — any voice in this language is used "
+            "instead of the browser's own default."
+        ),
+    )
 
     class Meta:
         verbose_name = "Site configuration"

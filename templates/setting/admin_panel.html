@@ -138,7 +138,73 @@
                 </label>
             </form>
         </div>
+
+        <div class="admin-card admin-card-stacked">
+            <span class="admin-card-icon"><i class="fas fa-volume-up"></i></span>
+            <span class="admin-card-body">
+                <span class="admin-card-title">{% trans 'Read-aloud voice' %}</span>
+                <span class="admin-card-desc">{% trans "Preferred voice for the module read-aloud feature. Voices are provided by your own browser, so this list reflects what's installed here — students whose browser has this exact voice will hear it; others fall back to any voice in the same language." %}</span>
+            </span>
+            <form action="{% url 'set_read_aloud_voice' %}" method="POST" id="voice-form" class="admin-card-voice-form">
+                {% csrf_token %}
+                <input type="hidden" name="voice_name" id="voice-name-input" value="{{ site_config.read_aloud_voice_name }}">
+                <input type="hidden" name="voice_lang" id="voice-lang-input" value="{{ site_config.read_aloud_voice_lang }}">
+                <select id="voice-select" class="form-select form-select-sm" disabled>
+                    <option value="">{% trans 'Loading voices…' %}</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary mt-2">{% trans 'Save as default' %}</button>
+            </form>
+        </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block js %}
+<script>
+(function () {
+    "use strict";
+    if (!("speechSynthesis" in window)) return;
+
+    var select = document.getElementById("voice-select");
+    var nameInput = document.getElementById("voice-name-input");
+    var langInput = document.getElementById("voice-lang-input");
+    if (!select || !nameInput || !langInput) return;
+
+    var currentName = nameInput.value;
+
+    function populate() {
+        var voices = speechSynthesis.getVoices();
+        if (!voices.length) return;
+
+        select.innerHTML = "";
+        var browserDefaultOption = document.createElement("option");
+        browserDefaultOption.value = "";
+        browserDefaultOption.textContent = "{% trans 'Browser default (no preference)' %}";
+        select.appendChild(browserDefaultOption);
+
+        voices.forEach(function (voice) {
+            var option = document.createElement("option");
+            option.value = voice.name;
+            option.dataset.lang = voice.lang;
+            option.textContent = voice.name + " (" + voice.lang + ")";
+            if (voice.name === currentName) option.selected = true;
+            select.appendChild(option);
+        });
+
+        select.disabled = false;
+    }
+
+    populate();
+    if (typeof speechSynthesis.onvoiceschanged !== "undefined") {
+        speechSynthesis.onvoiceschanged = populate;
+    }
+
+    document.getElementById("voice-form").addEventListener("submit", function () {
+        var option = select.options[select.selectedIndex];
+        nameInput.value = option ? option.value : "";
+        langInput.value = option && option.value ? option.dataset.lang : "";
+    });
+})();
+</script>
 {% endblock %}

@@ -960,6 +960,7 @@ def module_detail(request, slug, pk):
             "can_track": can_track,
             "previous_module": previous_module,
             "next_module": next_module,
+            "site_config": SiteConfiguration.get_solo(),
         },
     )
 
