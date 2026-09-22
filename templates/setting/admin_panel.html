@@ -138,21 +138,39 @@
                 </label>
             </form>
         </div>
+    </div>
 
-        <div class="admin-card admin-card-stacked">
-            <span class="admin-card-icon"><i class="fas fa-volume-up"></i></span>
-            <span class="admin-card-body">
-                <span class="admin-card-title">{% trans 'Read-aloud voice' %}</span>
-                <span class="admin-card-desc">{% trans "Preferred voice for the module read-aloud feature. Voices are provided by your own browser, so this list reflects what's installed here — students whose browser has this exact voice will hear it; others fall back to any voice in the same language." %}</span>
-            </span>
-            <form action="{% url 'set_read_aloud_voice' %}" method="POST" id="voice-form" class="admin-card-voice-form">
+    <div class="admin-panel-grid">
+        <div class="admin-card voice-card">
+            <div class="voice-card-header">
+                <span class="admin-card-icon"><i class="fas fa-volume-up"></i></span>
+                <span class="admin-card-body">
+                    <span class="admin-card-title">{% trans 'Read-aloud voice' %}</span>
+                    <span class="admin-card-desc">{% trans 'The voice students hear when they tap Listen on a module.' %}</span>
+                </span>
+                <span class="voice-card-status">
+                    <span class="voice-card-status-label">{% trans 'Saved voice' %}</span>
+                    <span class="voice-card-status-value">{% if site_config.read_aloud_voice_name %}{{ site_config.read_aloud_voice_name }}{% if site_config.read_aloud_voice_lang %} ({{ site_config.read_aloud_voice_lang }}){% endif %}{% else %}{% trans 'Browser default' %}{% endif %}</span>
+                </span>
+            </div>
+
+            <form action="{% url 'set_read_aloud_voice' %}" method="POST" id="voice-form" class="voice-card-form">
                 {% csrf_token %}
                 <input type="hidden" name="voice_name" id="voice-name-input" value="{{ site_config.read_aloud_voice_name }}">
                 <input type="hidden" name="voice_lang" id="voice-lang-input" value="{{ site_config.read_aloud_voice_lang }}">
-                <select id="voice-select" class="form-select form-select-sm" disabled>
-                    <option value="">{% trans 'Loading voices…' %}</option>
-                </select>
-                <button type="submit" class="btn btn-sm btn-primary mt-2">{% trans 'Save as default' %}</button>
+                <label class="voice-card-label" for="voice-select">{% trans 'Voice' %}</label>
+                <div class="voice-card-picker">
+                    <select id="voice-select" class="form-select" disabled>
+                        <option value="">{% trans 'Loading voices…' %}</option>
+                    </select>
+                    <button type="button" id="voice-preview" class="voice-card-preview" disabled>
+                        <i class="fas fa-play"></i><span>{% trans 'Preview' %}</span>
+                    </button>
+                </div>
+                <p class="voice-card-hint">{% trans 'Voices come from your browser. Students whose browser lacks this exact voice hear the closest match in the same language.' %}</p>
+                <div class="voice-card-footer">
+                    <button type="submit" id="voice-save" class="btn btn-primary" disabled>{% trans 'Save as default' %}</button>
+                </div>
             </form>
         </div>
     </div>
@@ -161,17 +179,47 @@
 {% endblock %}
 
 {% block js %}
+{% trans "Voice selection isn't supported in this browser." as t_unsupported %}
+{% trans 'This is how module text will sound to your students.' as t_sample %}
+{% trans 'Browser default (no preference)' as t_default %}
+{% trans 'not installed in this browser' as t_missing %}
+{% trans 'Stop' as t_stop %}
+{% trans 'Preview' as t_preview %}
 <script>
 (function () {
     "use strict";
-    if (!("speechSynthesis" in window)) return;
 
     var select = document.getElementById("voice-select");
     var nameInput = document.getElementById("voice-name-input");
     var langInput = document.getElementById("voice-lang-input");
-    if (!select || !nameInput || !langInput) return;
+    var previewBtn = document.getElementById("voice-preview");
+    var saveBtn = document.getElementById("voice-save");
+    if (!select || !nameInput || !langInput || !previewBtn || !saveBtn) return;
 
-    var currentName = nameInput.value;
+    if (!("speechSynthesis" in window)) {
+        select.innerHTML = "";
+        var unsupported = document.createElement("option");
+        unsupported.textContent = "{{ t_unsupported|escapejs }}";
+        select.appendChild(unsupported);
+        return;
+    }
+
+    var savedName = nameInput.value;
+    var savedLang = langInput.value;
+    // Browsers re-fire voiceschanged while their voice list loads; remember the
+    // latest pick so each repopulate doesn't snap back to the saved voice.
+    var chosenName = savedName;
+    var sampleText = "{{ t_sample|escapejs }}";
+    var previewIcon = previewBtn.querySelector("i");
+    var previewLabel = previewBtn.querySelector("span");
+    var previewToken = 0;
+    var previewing = false;
+
+    function syncButtons() {
+        var ready = !select.disabled;
+        previewBtn.disabled = !ready;
+        saveBtn.disabled = !ready || select.value === savedName;
+    }
 
     function populate() {
         var voices = speechSynthesis.getVoices();
@@ -180,20 +228,79 @@
         select.innerHTML = "";
         var browserDefaultOption = document.createElement("option");
         browserDefaultOption.value = "";
-        browserDefaultOption.textContent = "{% trans 'Browser default (no preference)' %}";
+        browserDefaultOption.textContent = "{{ t_default|escapejs }}";
         select.appendChild(browserDefaultOption);
 
+        var found = false;
         voices.forEach(function (voice) {
             var option = document.createElement("option");
             option.value = voice.name;
             option.dataset.lang = voice.lang;
             option.textContent = voice.name + " (" + voice.lang + ")";
-            if (voice.name === currentName) option.selected = true;
+            if (voice.name === chosenName) { option.selected = true; found = true; }
             select.appendChild(option);
         });
 
+        // Keep the saved voice visible even if this browser doesn't have it,
+        // so the picker never silently shows a different voice than the saved one.
+        if (chosenName && !found) {
+            var missing = document.createElement("option");
+            missing.value = chosenName;
+            missing.dataset.lang = savedLang;
+            missing.textContent = chosenName + " \u2014 {{ t_missing|escapejs }}";
+            missing.selected = true;
+            select.insertBefore(missing, select.options[1]);
+        }
+
         select.disabled = false;
+        syncButtons();
     }
+
+    function voiceFor(option) {
+        var voices = speechSynthesis.getVoices();
+        var byName = voices.find(function (v) { return v.name === option.value; });
+        if (byName) return byName;
+        var lang = (option.dataset.lang || "").toLowerCase();
+        if (!lang) return null;
+        return voices.find(function (v) { return v.lang.toLowerCase().indexOf(lang) === 0; }) || null;
+    }
+
+    function setPreviewing(on) {
+        previewing = on;
+        previewIcon.className = on ? "fas fa-stop" : "fas fa-play";
+        previewLabel.textContent = on ? "{{ t_stop|escapejs }}" : "{{ t_preview|escapejs }}";
+    }
+
+    function stopPreview() {
+        previewToken++;
+        speechSynthesis.cancel();
+        setPreviewing(false);
+    }
+
+    previewBtn.addEventListener("click", function () {
+        if (previewing) return stopPreview();
+        speechSynthesis.cancel();
+        var utterance = new SpeechSynthesisUtterance(sampleText);
+        var voice = voiceFor(select.options[select.selectedIndex]);
+        if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
+        } else {
+            utterance.lang = document.documentElement.lang || "en";
+        }
+        var token = ++previewToken;
+        function done() { if (token === previewToken) setPreviewing(false); }
+        utterance.onend = done;
+        utterance.onerror = done;
+        speechSynthesis.speak(utterance);
+        setPreviewing(true);
+    });
+
+    select.addEventListener("change", function () {
+        chosenName = select.value;
+        if (previewing) stopPreview();
+        syncButtons();
+    });
 
     populate();
     if (typeof speechSynthesis.onvoiceschanged !== "undefined") {
@@ -205,6 +312,8 @@
         nameInput.value = option ? option.value : "";
         langInput.value = option && option.value ? option.dataset.lang : "";
     });
+
+    window.addEventListener("pagehide", function () { speechSynthesis.cancel(); });
 })();
 </script>
 {% endblock %}

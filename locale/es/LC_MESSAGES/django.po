@@ -1651,3 +1651,59 @@ msgstr "Formulario de carga de vídeo"
 
 msgid "No video description set."
 msgstr "No hay descripción de vídeo definida."
+
+msgid "Read-aloud voice"
+msgstr "Voz de lectura en voz alta"
+
+msgid "The voice students hear when they tap Listen on a module."
+msgstr ""
+"La voz que escuchan los estudiantes cuando pulsan Escuchar en un módulo."
+
+msgid "Saved voice"
+msgstr "Voz guardada"
+
+msgid "Browser default"
+msgstr "Predeterminada del navegador"
+
+msgid "Voice"
+msgstr "Voz"
+
+msgid "Preview"
+msgstr "Vista previa"
+
+msgid "Stop"
+msgstr "Detener"
+
+msgid ""
+"Voices come from your browser. Students whose browser lacks this exact voice"
+" hear the closest match in the same language."
+msgstr ""
+"Las voces provienen de su navegador. Los estudiantes cuyo navegador no tenga"
+" exactamente esta voz escucharán la más cercana en el mismo idioma."
+
+msgid "This is how module text will sound to your students."
+msgstr "Así escucharán sus estudiantes el texto del módulo."
+
+msgid "not installed in this browser"
+msgstr "no instalada en este navegador"
+
+msgid "Voice selection isn't supported in this browser."
+msgstr "La selección de voz no es compatible con este navegador."
+
+msgid "Save as default"
+msgstr "Guardar como predeterminada"
+
+msgid "Loading voices…"
+msgstr "Cargando voces…"
+
+msgid "Browser default (no preference)"
+msgstr "Predeterminada del navegador (sin preferencia)"
+
+msgid "Listen"
+msgstr "Escuchar"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Resume"
+msgstr "Reanudar"
