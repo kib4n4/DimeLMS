@@ -1645,3 +1645,58 @@ msgstr "Форма загрузки видео"
 
 msgid "No video description set."
 msgstr "Описание видео не задано."
+
+msgid "Read-aloud voice"
+msgstr "Голос для чтения вслух"
+
+msgid "The voice students hear when they tap Listen on a module."
+msgstr "Голос, который слышат студенты, когда нажимают «Слушать» в модуле."
+
+msgid "Saved voice"
+msgstr "Сохранённый голос"
+
+msgid "Browser default"
+msgstr "По умолчанию в браузере"
+
+msgid "Voice"
+msgstr "Голос"
+
+msgid "Preview"
+msgstr "Прослушать"
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid ""
+"Voices come from your browser. Students whose browser lacks this exact voice"
+" hear the closest match in the same language."
+msgstr ""
+"Голоса предоставляет ваш браузер. Студенты, в браузере которых нет именно "
+"этого голоса, услышат ближайший подходящий голос на том же языке."
+
+msgid "This is how module text will sound to your students."
+msgstr "Так ваши студенты услышат текст модуля."
+
+msgid "not installed in this browser"
+msgstr "не установлен в этом браузере"
+
+msgid "Voice selection isn't supported in this browser."
+msgstr "Выбор голоса не поддерживается в этом браузере."
+
+msgid "Save as default"
+msgstr "Сохранить по умолчанию"
+
+msgid "Loading voices…"
+msgstr "Загрузка голосов…"
+
+msgid "Browser default (no preference)"
+msgstr "По умолчанию в браузере (без предпочтений)"
+
+msgid "Listen"
+msgstr "Слушать"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Resume"
+msgstr "Продолжить"

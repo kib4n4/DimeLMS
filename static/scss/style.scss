@@ -1285,15 +1285,48 @@ html.sidebar-rail .sidebar-rail-toggle .nav-icon {
   color: var(--text-muted);
 }
 
+.admin-panel-section {
+  container-type: inline-size;
+}
+
 .admin-panel-section + .admin-panel-section {
   margin-top: var(--space-8);
 }
 
+// Column count follows the width the section actually gets (container queries,
+// so the collapsible sidebar is accounted for) and how many cards the row
+// holds, so every row fills evenly instead of leaving an orphan card.
 .admin-panel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: var(--space-4);
+
+  > :only-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.admin-panel-grid + .admin-panel-grid {
+  margin-top: var(--space-4);
+}
+
+@container (min-width: 520px) {
+  .admin-panel-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 800px) {
+  .admin-panel-grid:has(> :nth-child(3):last-child) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 1240px) {
+  .admin-panel-grid:has(> :nth-child(4):last-child) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .admin-card {
@@ -1382,18 +1415,142 @@ a.admin-card:hover .admin-card-chevron {
   flex: none;
 }
 
-.admin-card-stacked {
+// Read-aloud voice: a settings panel rather than a link card. Header (what it
+// is + what's saved) above a recessed controls area (pick, preview, save).
+.voice-card {
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
+  gap: 0;
   height: auto;
+  padding: 0;
+  overflow: hidden;
 }
 
-.admin-card-voice-form {
+.voice-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+
+  .admin-card-body {
+    flex: 1 1 240px;
+  }
+}
+
+.voice-card-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  margin-left: auto;
+  text-align: right;
+}
+
+.voice-card-status-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.voice-card-status-value {
+  padding: 0.2em 0.75em;
+  border-radius: var(--radius-full);
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.voice-card-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  width: 100%;
+  margin: 0;
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+}
+
+.voice-card-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.voice-card-picker {
+  display: flex;
+  gap: var(--space-2);
+
+  .form-select {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.voice-card-preview {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    border-color: var(--brand-500);
+    color: var(--brand-700);
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  // Opt out of the sitewide .fas icon bubble (34px grey circle).
+  i {
+    width: auto;
+    height: auto;
+    background: none;
+    border-radius: 0;
+    font-size: var(--text-xs);
+  }
+}
+
+.voice-card-hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.voice-card-footer {
+  display: flex;
+  justify-content: flex-end;
   margin-top: var(--space-2);
+}
+
+@container (max-width: 519px) {
+  .voice-card-status {
+    align-items: flex-start;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .voice-card-footer .btn {
+    width: 100%;
+  }
 }
 @media screen and (max-width: 1150px) {
   #side-nav .top-side {

@@ -299,6 +299,7 @@
 
     var text = JSON.parse(dataEl.textContent);
     var utterance = null;
+    var playTicket = 0;
     var preferredVoiceName = "{{ site_config.read_aloud_voice_name|escapejs }}";
     var preferredVoiceLang = "{{ site_config.read_aloud_voice_lang|escapejs }}";
 
@@ -316,6 +317,20 @@
             if (byLang) return byLang;
         }
         return null;
+    }
+
+    // Browsers load their voice list lazily; clicking Listen before it arrives
+    // would silently fall back to the default voice, so wait for it (briefly).
+    function whenVoicesReady(callback) {
+        if (speechSynthesis.getVoices().length) return callback();
+        var called = false;
+        function run() {
+            if (called) return;
+            called = true;
+            callback();
+        }
+        speechSynthesis.addEventListener("voiceschanged", run, { once: true });
+        setTimeout(run, 1500);
     }
 
     function showIdle() {
@@ -339,23 +354,28 @@
     }
 
     controls.classList.remove("d-none");
+    speechSynthesis.getVoices();
 
     playBtn.addEventListener("click", function () {
         if (speechSynthesis.paused && utterance) {
             speechSynthesis.resume();
         } else {
             speechSynthesis.cancel();
-            utterance = new SpeechSynthesisUtterance(text);
-            var voice = pickVoice();
-            if (voice) {
-                utterance.voice = voice;
-                utterance.lang = voice.lang;
-            } else {
-                utterance.lang = "{{ LANGUAGE_CODE|default:'en' }}";
-            }
-            utterance.onend = showIdle;
-            utterance.onerror = showIdle;
-            speechSynthesis.speak(utterance);
+            var ticket = ++playTicket;
+            whenVoicesReady(function () {
+                if (ticket !== playTicket) return;
+                utterance = new SpeechSynthesisUtterance(text);
+                var voice = pickVoice();
+                if (voice) {
+                    utterance.voice = voice;
+                    utterance.lang = voice.lang;
+                } else {
+                    utterance.lang = "{{ LANGUAGE_CODE|default:'en' }}";
+                }
+                utterance.onend = showIdle;
+                utterance.onerror = showIdle;
+                speechSynthesis.speak(utterance);
+            });
         }
         showPlaying();
     });
@@ -366,6 +386,7 @@
     });
 
     stopBtn.addEventListener("click", function () {
+        playTicket++;
         speechSynthesis.cancel();
         showIdle();
     });
