@@ -23,7 +23,15 @@
             <div class="p-3">
                 <form action="" method="POST">{% csrf_token %}
                     {{ form.name|as_crispy_field }}
-                    {{ form.code|as_crispy_field }}
+                    {% if form.instance.pk %}
+                    <div class="mb-3">
+                        <label class="form-label">{% trans 'Code' %}</label>
+                        <input type="text" class="form-control" value="{{ form.instance.code }}" disabled>
+                        <div class="form-text">{% trans 'System-generated from the institution name.' %}</div>
+                    </div>
+                    {% else %}
+                    <div class="form-text mb-3">{% trans 'A code will be generated automatically from the institution name once saved.' %}</div>
+                    {% endif %}
                     {{ form.email|as_crispy_field }}
                     {{ form.phone|as_crispy_field }}
                     {{ form.contact_name|as_crispy_field }}

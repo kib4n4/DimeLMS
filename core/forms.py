@@ -7,18 +7,14 @@ from .models import NewsAndEvents, Session, Semester, SEMESTER, Institution
 class InstitutionForm(forms.ModelForm):
     class Meta:
         model = Institution
-        fields = ("name", "code", "email", "phone", "contact_name", "is_active")
+        fields = ("name", "email", "phone", "contact_name", "is_active")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # `code` is nullable in the DB (so old rows migrate cleanly) but
-        # every institution created through this form must have one.
-        self.fields["code"].required = True
-        for name in ("name", "code", "email", "phone", "contact_name"):
+        # `code` is system-generated from the name on save (see
+        # Institution's pre_save receiver) — never entered by hand.
+        for name in ("name", "email", "phone", "contact_name"):
             self.fields[name].widget.attrs.update({"class": "form-control"})
-
-    def clean_code(self):
-        return (self.cleaned_data.get("code") or "").strip()
 
 
 # news and events

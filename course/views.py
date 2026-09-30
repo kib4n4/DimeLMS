@@ -173,18 +173,35 @@ def program_delete(request, pk):
 # ########################################################
 @login_required
 def course_single(request, slug):
+    """
+    The course overview — a standalone landing page (title, summary, meta,
+    progress) shown before a student/staff member goes on to the course's
+    actual contents. Materials (files/videos/links) and lecturers live on
+    the modules page (see module_list) alongside the modules themselves.
+    """
     course = get_object_or_404(
         institution_scoped(
             Course.objects.all(), request.user, field="program__institution"
         ),
         slug=slug,
     )
-    files = Upload.objects.filter(course__slug=slug)
-    videos = UploadVideo.objects.filter(course__slug=slug)
-    links = CourseLink.objects.filter(course__slug=slug)
 
     # lecturers = User.objects.filter(allocated_lecturer__pk=course.id)
     lecturers = CourseAllocation.objects.filter(courses__pk=course.id)
+
+    modules = course.modules.all()
+    module_count = modules.count()
+    total_duration_minutes = sum(m.duration_minutes for m in modules)
+
+    is_registered_student = False
+    course_progress = None
+    if request.user.is_student:
+        student = Student.objects.filter(student=request.user).first()
+        is_registered_student = bool(
+            student and TakenCourse.objects.filter(student=student, course=course).exists()
+        )
+        if is_registered_student:
+            course_progress = course.progress_for_student(student)
 
     return render(
         request,
@@ -192,11 +209,12 @@ def course_single(request, slug):
         {
             "title": course.title,
             "course": course,
-            "files": files,
-            "videos": videos,
-            "links": links,
             "lecturers": lecturers,
             "media_url": settings.MEDIA_ROOT,
+            "module_count": module_count,
+            "total_duration_minutes": total_duration_minutes,
+            "is_registered_student": is_registered_student,
+            "course_progress": course_progress,
         },
     )
 
@@ -412,7 +430,7 @@ def handle_file_upload(request, slug):
             messages.success(
                 request, (request.POST.get("title") + " has been uploaded.")
             )
-            return redirect("course_detail", slug=slug)
+            return redirect("module_list", slug=slug)
     else:
         form = UploadFormFile(course=course)
     return render(
@@ -438,7 +456,7 @@ def handle_file_edit(request, slug, file_id):
             messages.success(
                 request, (request.POST.get("title") + " has been updated.")
             )
-            return redirect("course_detail", slug=slug)
+            return redirect("module_list", slug=slug)
     else:
         form = UploadFormFile(instance=instance, course=course)
 
@@ -457,7 +475,7 @@ def handle_file_delete(request, slug, file_id):
     file.delete()
 
     messages.success(request, (file.title + " has been deleted."))
-    return redirect("course_detail", slug=slug)
+    return redirect("module_list", slug=slug)
 
 
 @login_required
@@ -587,7 +605,7 @@ def handle_video_upload(request, slug):
             messages.success(
                 request, (request.POST.get("title") + " has been uploaded.")
             )
-            return redirect("course_detail", slug=slug)
+            return redirect("module_list", slug=slug)
     else:
         form = UploadFormVideo(course=course)
     return render(
@@ -623,7 +641,7 @@ def handle_video_edit(request, slug, video_slug):
             messages.success(
                 request, (request.POST.get("title") + " has been updated.")
             )
-            return redirect("course_detail", slug=slug)
+            return redirect("module_list", slug=slug)
     else:
         form = UploadFormVideo(instance=instance, course=course)
 
@@ -642,7 +660,7 @@ def handle_video_delete(request, slug, video_slug):
     video.delete()
 
     messages.success(request, (video.title + " has been deleted."))
-    return redirect("course_detail", slug=slug)
+    return redirect("module_list", slug=slug)
 
 
 # ########################################################
@@ -665,7 +683,7 @@ def handle_link_upload(request, slug):
             messages.success(
                 request, (request.POST.get("title") + " has been added.")
             )
-            return redirect("course_detail", slug=slug)
+            return redirect("module_list", slug=slug)
     else:
         form = UploadFormLink(course=course)
     return render(
@@ -700,7 +718,7 @@ def handle_link_edit(request, slug, link_slug):
             messages.success(
                 request, (request.POST.get("title") + " has been updated.")
             )
-            return redirect("course_detail", slug=slug)
+            return redirect("module_list", slug=slug)
     else:
         form = UploadFormLink(instance=instance, course=course)
 
@@ -718,7 +736,7 @@ def handle_link_delete(request, slug, link_slug):
     link.delete()
 
     messages.success(request, (link.title + " has been deleted."))
-    return redirect("course_detail", slug=slug)
+    return redirect("module_list", slug=slug)
 
 
 # ########################################################
@@ -762,6 +780,11 @@ def module_list(request, slug):
     for module in modules:
         module.my_progress = progress_by_module.get(module.id)
 
+    files = Upload.objects.filter(course__slug=slug)
+    videos = UploadVideo.objects.filter(course__slug=slug)
+    links = CourseLink.objects.filter(course__slug=slug)
+    lecturers = CourseAllocation.objects.filter(courses__pk=course.id)
+
     return render(
         request,
         "course/module_list.html",
@@ -771,6 +794,10 @@ def module_list(request, slug):
             "modules": modules,
             "course_progress": course_progress,
             "is_registered_student": is_registered_student,
+            "files": files,
+            "videos": videos,
+            "links": links,
+            "lecturers": lecturers,
         },
     )
 
