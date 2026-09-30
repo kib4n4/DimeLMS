@@ -47,9 +47,7 @@
         <a href="{{ link.url }}" target="_blank" rel="noopener">{% trans 'Open it on YouTube instead.' %}</a>
     </p>
     {% endif %}
-    <p class="mt-2"><i class="fas fa-calendar"></i> {{ link.timestamp|timesince }} {% trans 'ago' %} —
-        <a href="{{ link.url }}" target="_blank" rel="noopener"><i class="fab fa-youtube"></i> {% trans 'Watch on YouTube' %}</a>
-    </p>
+    <p class="mt-2"><i class="fas fa-calendar"></i> {{ link.timestamp|timesince }} {% trans 'ago' %}</p>
     {% if link.summary %}
     <p class="text-orange text-center">{{ link.summary }}</p>
     {% else %}

@@ -70,6 +70,12 @@ class CourseAddForm(forms.ModelForm):
         self.fields["year"].widget.attrs.update({"class": "form-control"})
         self.fields["semester"].widget.attrs.update({"class": "form-control"})
         self.fields["length_type"].widget.attrs.update({"class": "form-control"})
+        if not self.instance.pk:
+            # New course — default to whichever semester is marked current,
+            # so admins don't have to hunt for it. Still optional/changeable.
+            current_semester = Semester.objects.filter(is_current_semester=True).first()
+            if current_semester:
+                self.fields["semester"].initial = current_semester
 
 
 class CourseAllocationForm(forms.ModelForm):

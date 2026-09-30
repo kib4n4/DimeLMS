@@ -1,4 +1,5 @@
 import random
+import re
 import string
 
 from django.db import models
@@ -41,9 +42,11 @@ class Institution(models.Model):
     """
 
     name = models.CharField(max_length=200, unique=True)
-    # Short unique identifier for the organization, e.g. "DIME001". Nullable
-    # at the DB level so existing rows migrate cleanly (a data migration
-    # backfills them); required in the form for anything created since.
+    # System-generated unique identifier for the organization, e.g.
+    # "DIME0001" — a prefix/acronym derived from the name plus a 4-digit
+    # sequence, assigned automatically on save (see _unique_institution_code
+    # below). Nullable at the DB level only so existing rows migrate
+    # cleanly; every institution gets one from here on.
     code = models.CharField(max_length=20, unique=True, null=True, blank=True)
     email = models.EmailField(_("contact email"), blank=True)
     phone = models.CharField(_("contact phone"), max_length=30, blank=True)
@@ -71,10 +74,35 @@ def _unique_institution_slug(instance):
     return slug
 
 
+def _institution_code_prefix(name):
+    """A short uppercase prefix derived from the institution name: an
+    acronym of initials for multi-word names ("Dime Consultants Limited" ->
+    "DCL"), or the first few letters for a single word ("Dimeconsultants"
+    -> "DIME")."""
+    words = re.findall(r"[A-Za-z]+", name)
+    if not words:
+        return "ORG"
+    if len(words) == 1:
+        return words[0][:4].upper() or "ORG"
+    return "".join(word[0] for word in words).upper()[:6]
+
+
+def _unique_institution_code(instance):
+    prefix = _institution_code_prefix(instance.name)
+    n = 1
+    code = f"{prefix}{n:04d}"
+    while Institution.objects.filter(code=code).exclude(pk=instance.pk).exists():
+        n += 1
+        code = f"{prefix}{n:04d}"
+    return code
+
+
 @receiver(pre_save, sender=Institution)
 def institution_pre_save_receiver(sender, instance, *args, **kwargs):
     if not instance.slug:
         instance.slug = _unique_institution_slug(instance)
+    if not instance.code:
+        instance.code = _unique_institution_code(instance)
 
 
 class NewsAndEventsQuerySet(models.query.QuerySet):

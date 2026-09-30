@@ -43,6 +43,16 @@ CSRF_TRUSTED_ORIGINS = config(
     cast=lambda value: [origin.strip() for origin in value.split(",") if origin.strip()],
 )
 
+# Django's own default ("same-origin") strips the Referer header on every
+# cross-origin request — including the browser's request for the embedded
+# YouTube player's iframe src. Without it, YouTube can't identify the
+# embedding site and refuses to play (its "Error 153",
+# PLAYABILITY_ERROR_CODE_EMBEDDER_IDENTITY_MISSING_REFERRER), which broke
+# in-platform playback of course YouTube links. "strict-origin-when-cross-origin"
+# still only leaks our origin (not the full path) to third parties, so this
+# keeps the same privacy trade-off as the browser's own native default.
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
 # change the default user models to our custom model
 AUTH_USER_MODEL = "accounts.User"
 

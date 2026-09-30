@@ -373,9 +373,12 @@ class StudentAddForm(UserCreationForm):
     )
 
     institution = forms.ModelChoiceField(
-        queryset=Institution.objects.all(),
+        queryset=Institution.objects.filter(is_active=True),
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        widget=forms.Select(
+            attrs={"class": "browser-default custom-select form-control"}
+        ),
+        label="Institution",
     )
 
     # def validate_email(self):
@@ -401,6 +404,10 @@ class StudentAddForm(UserCreationForm):
             )
         else:
             self.fields["institution"].required = True
+            # Self-service sign-up registers to an institution, not a
+            # program — Student.program is nullable and gets set later
+            # (an org admin assigns one, or the student picks a course).
+            self.fields["program"].required = False
 
     @transaction.atomic()
     def save(self, commit=True):

@@ -151,23 +151,28 @@ class InstitutionAddViewTests(TestCase):
         self.client.force_login(superuser)
         response = self.client.post(
             reverse("institution_add"),
-            {"name": "New Org", "code": "NEW001", "is_active": True},
+            {"name": "New Org", "is_active": True},
         )
         institution = Institution.objects.get(name="New Org")
         self.assertRedirects(
             response,
             reverse("institution_detail", kwargs={"pk": institution.pk}),
         )
+        # code is assigned automatically, never entered by hand.
+        self.assertEqual(institution.code, "NO0001")
 
 
 class InstitutionFormTests(TestCase):
-    def test_code_is_required(self):
+    def test_code_is_not_a_form_field(self):
         form = InstitutionForm(data={"name": "New Org", "is_active": True})
-        self.assertFalse(form.is_valid())
-        self.assertIn("code", form.errors)
+        self.assertNotIn("code", form.fields)
 
-    def test_valid_with_code(self):
-        form = InstitutionForm(
-            data={"name": "New Org", "code": "NEW001", "is_active": True}
-        )
+    def test_valid_without_code(self):
+        form = InstitutionForm(data={"name": "New Org", "is_active": True})
         self.assertTrue(form.is_valid(), form.errors)
+
+    def test_saving_generates_a_code(self):
+        form = InstitutionForm(data={"name": "Dime Consultants Limited", "is_active": True})
+        self.assertTrue(form.is_valid(), form.errors)
+        institution = form.save()
+        self.assertEqual(institution.code, "DCL0001")
